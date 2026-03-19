@@ -1,5 +1,6 @@
 package com.example.appfinanceiro.feature.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -11,6 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,15 +23,36 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.appfinanceiro.core.designsystem.components.ExitConfirmationDialog
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.designsystem.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onLogoutClick: () -> Unit = {}
+) {
     val isDark = isSystemInDarkTheme()
     val backgroundColor = if (isDark) BackgroundDark else BackgroundLight
     val textColor = if (isDark) Color.White else Color.Black
+
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    BackHandler {
+        showExitDialog = true
+    }
+
+    if (showExitDialog) {
+        ExitConfirmationDialog(
+            onConfirm = {
+                showExitDialog = false
+                onLogoutClick()
+            },
+            onDismiss = {
+                showExitDialog = false
+            }
+        )
+    }
 
     Scaffold(
         containerColor = backgroundColor,
@@ -195,8 +221,9 @@ private fun ExpenseItem(icon: ImageVector, iconColor: Color, title: String, type
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, color = textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.background(if (isDark) BackgroundDark else BackgroundLight, RoundedCornerShape(4.dp)).padding(horizontal = 4.dp, vertical = 2.dp)) {
+                Box(modifier = Modifier.background(TextMuted.copy(alpha = 0.2f), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)) {
                     Text(type, color = TextMuted, fontSize = 10.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
