@@ -24,5 +24,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "App Financeiro"
 include(":app")
-include(":core:designsystem")
-include(":feature:login")
