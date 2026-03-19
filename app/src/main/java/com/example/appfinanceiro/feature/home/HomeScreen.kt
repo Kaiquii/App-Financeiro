@@ -4,13 +4,42 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PhoneIphone
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,34 +54,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.components.ExitConfirmationDialog
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
-import com.example.appfinanceiro.core.designsystem.theme.*
+import com.example.appfinanceiro.core.designsystem.theme.DangerRed
+import com.example.appfinanceiro.core.designsystem.theme.GreenPositive
+import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
+import com.example.appfinanceiro.core.designsystem.theme.SurfaceCardBlue
+import com.example.appfinanceiro.core.designsystem.theme.SurfaceCardBlueLight
+import com.example.appfinanceiro.core.designsystem.theme.SurfaceCardPurple
+import com.example.appfinanceiro.core.designsystem.theme.SurfaceCardPurpleLight
+import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onLogoutClick: () -> Unit = {}
+    onNavigate: (Int) -> Unit = {}
 ) {
-    val isDark = isSystemInDarkTheme()
-    val backgroundColor = if (isDark) BackgroundDark else BackgroundLight
-    val textColor = if (isDark) Color.White else Color.Black
-
-    var showExitDialog by remember { mutableStateOf(false) }
-
-    BackHandler {
-        showExitDialog = true
-    }
-
-    if (showExitDialog) {
-        ExitConfirmationDialog(
-            onConfirm = {
-                showExitDialog = false
-                onLogoutClick()
-            },
-            onDismiss = {
-                showExitDialog = false
-            }
-        )
-    }
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
 
     Scaffold(
         containerColor = backgroundColor,
@@ -70,6 +87,7 @@ fun HomeScreen(
         bottomBar = {
             StandardBottomBar(
                 itemSelecionado = 0,
+                onItemClick = onNavigate,
                 onAddClick = { /* TODO: Abrir tela de nova despesa */ }
             )
         }
@@ -113,8 +131,8 @@ private fun MonthSelector() {
 @Composable
 private fun ResumoFinanceiroSection() {
     val isDark = isSystemInDarkTheme()
-    val textColor = if (isDark) Color.White else Color.Black
-    val cardBg = if (isDark) SurfaceCard else SurfaceCardLight
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val cardBg = MaterialTheme.colorScheme.surface
     val cardPurple = if (isDark) SurfaceCardPurple else SurfaceCardPurpleLight
     val cardBlue = if (isDark) SurfaceCardBlue else SurfaceCardBlueLight
 
@@ -167,9 +185,8 @@ private fun SummaryCard(
 
 @Composable
 private fun DespesasSection() {
-    val isDark = isSystemInDarkTheme()
-    val textColor = if (isDark) Color.White else Color.Black
-    val cardBg = if (isDark) SurfaceCard else SurfaceCardLight
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val cardBg = MaterialTheme.colorScheme.surface
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -207,9 +224,8 @@ private fun DespesasSection() {
 
 @Composable
 private fun ExpenseItem(icon: ImageVector, iconColor: Color, title: String, type: String, date: String, value: String) {
-    val isDark = isSystemInDarkTheme()
-    val textColor = if (isDark) Color.White else Color.Black
-    val cardBg = if (isDark) SurfaceCard else SurfaceCardLight
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val cardBg = MaterialTheme.colorScheme.surface
 
     Row(
         modifier = Modifier.fillMaxWidth().background(cardBg, RoundedCornerShape(12.dp)).padding(16.dp),

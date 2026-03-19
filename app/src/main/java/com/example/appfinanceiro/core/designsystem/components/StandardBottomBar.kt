@@ -1,7 +1,6 @@
 package com.example.appfinanceiro.core.designsystem.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -15,6 +14,7 @@ import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -24,7 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.appfinanceiro.core.designsystem.theme.*
+import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 
 @Composable
 fun StandardBottomBar(
@@ -32,19 +32,17 @@ fun StandardBottomBar(
     onItemClick: (Int) -> Unit = {},
     onAddClick: () -> Unit = {}
 ) {
-    val isDark = isSystemInDarkTheme()
-    val bgColor = if (isDark) BackgroundDark else BackgroundLight
-    val unselectedIconColor = if (isDark) TextMuted else Color.Gray
+    val bgColor = MaterialTheme.colorScheme.background
+    val unselectedColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
 
     Box(contentAlignment = Alignment.BottomCenter) {
-
-        NavigationBar(containerColor = bgColor, contentColor = unselectedIconColor) {
+        NavigationBar(containerColor = bgColor, contentColor = unselectedColor) {
             NavigationBarItem(
                 icon = { Icon(Icons.Default.Home, contentDescription = "Início") },
                 label = { Text("Início") },
                 selected = itemSelecionado == 0,
                 onClick = { onItemClick(0) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedIconColor, unselectedTextColor = unselectedIconColor)
+                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedColor, unselectedTextColor = unselectedColor)
             )
 
             NavigationBarItem(
@@ -52,7 +50,7 @@ fun StandardBottomBar(
                 label = { Text("Despesas") },
                 selected = itemSelecionado == 1,
                 onClick = { onItemClick(1) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedIconColor, unselectedTextColor = unselectedIconColor)
+                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedColor, unselectedTextColor = unselectedColor)
             )
 
             NavigationBarItem(icon = { }, label = { }, selected = false, onClick = { }, enabled = false)
@@ -62,7 +60,7 @@ fun StandardBottomBar(
                 label = { Text("Relatórios") },
                 selected = itemSelecionado == 2,
                 onClick = { onItemClick(2) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedIconColor, unselectedTextColor = unselectedIconColor)
+                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedColor, unselectedTextColor = unselectedColor)
             )
 
             NavigationBarItem(
@@ -70,14 +68,14 @@ fun StandardBottomBar(
                 label = { Text("Perfil") },
                 selected = itemSelecionado == 3,
                 onClick = { onItemClick(3) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedIconColor, unselectedTextColor = unselectedIconColor)
+                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedColor, unselectedTextColor = unselectedColor)
             )
         }
 
         Box(
             modifier = Modifier
                 .offset(y = (-40).dp)
-                .size(64.dp)
+                .size(68.dp)
                 .background(bgColor, CircleShape)
                 .padding(6.dp)
         ) {
