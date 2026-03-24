@@ -50,10 +50,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.components.ExitConfirmationDialog
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
+import com.example.appfinanceiro.core.designsystem.theme.AppFinanceiroTheme
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.GreenPositive
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
@@ -102,7 +104,7 @@ fun HomeScreen(
             item { MonthSelector() }
             item { ResumoFinanceiroSection() }
             item { DespesasSection() }
-            item { Spacer(modifier = Modifier.height(80.dp)) }
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
@@ -189,7 +191,7 @@ private fun DespesasSection() {
     val cardBg = MaterialTheme.colorScheme.surface
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Despesas", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Row(
                 modifier = Modifier.background(cardBg, RoundedCornerShape(16.dp)).padding(horizontal = 12.dp, vertical = 4.dp),
@@ -247,5 +249,13 @@ private fun ExpenseItem(icon: ImageVector, iconColor: Color, title: String, type
             }
         }
         Text(value, color = textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    AppFinanceiroTheme {
+        HomeScreen()
     }
 }
