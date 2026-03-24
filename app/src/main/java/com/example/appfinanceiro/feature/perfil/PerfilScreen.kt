@@ -131,15 +131,13 @@ fun PerfilScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             SectionTitle("Configurações")
-            SettingsItem(icon = Icons.Default.AccountBalance, iconColor = PrimaryBlue, title = "Configurações de Renda", subtitle = "Salário, Adiantamento")
-            SettingsItem(icon = Icons.Default.Notifications, iconColor = PrimaryBlue, title = "Notificações", subtitle = "Alertas de gastos, lembretes")
-            SettingsItem(icon = Icons.Default.Lock, iconColor = PrimaryBlue, title = "Segurança", subtitle = "Senha, Face ID, Biometria")
-            SettingsItem(icon = Icons.Default.Download, iconColor = PrimaryBlue, title = "Exportar Dados", subtitle = "Baixar relatórios em PDF/CSV")
+            SettingsItem(icon = Icons.Default.AccountBalance, iconColor = PrimaryBlue, title = "Configurações de Renda", subtitle = "Salário, Adiantamento e Renda Extra")
+            SettingsItem(icon = Icons.Default.Lock, iconColor = PrimaryBlue, title = "Segurança e Privacidade", subtitle = "Edite a sua Senha, Biometria")
 
             Spacer(modifier = Modifier.height(24.dp))
 
             SectionTitle("Ajuda")
-            SettingsItem(icon = Icons.Default.HelpOutline, iconColor = PrimaryBlue, title = "Central de Ajuda", subtitle = "Dúvidas frequentes e suporte")
+            SettingsItem(icon = Icons.Default.HelpOutline, iconColor = PrimaryBlue, title = "Central de Ajuda", subtitle = "Dúvidas frequentes e Suporte")
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -156,8 +154,6 @@ fun PerfilScreen(
                 Text("Sair da Conta", color = DangerRed, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Versão 2.4.1 (104)", color = TextMuted, fontSize = 12.sp, textAlign = TextAlign.Center)
             Spacer(modifier = Modifier.height(40.dp))
         }
     }
