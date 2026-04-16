@@ -15,6 +15,7 @@ import com.example.appfinanceiro.feature.home.HomeScreen
 import com.example.appfinanceiro.feature.login.LoginScreen
 import com.example.appfinanceiro.feature.perfil.PerfilScreen
 import com.example.appfinanceiro.feature.login.RegisterScreen
+import com.example.appfinanceiro.feature.login.EsqueciSenhaScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +39,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onNavigateToRegister = {
                                     navController.navigate("register")
+                                },
+                                onNavigateToForgot = {
+                                    navController.navigate("esqueci_senha")
                                 }
                             )
                         }
@@ -48,6 +52,14 @@ class MainActivity : ComponentActivity() {
                                     navController.popBackStack()
                                 },
                                 onRegisterSuccess = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        composable("esqueci_senha") {
+                            EsqueciSenhaScreen(
+                                onNavigateBack = {
                                     navController.popBackStack()
                                 }
                             )

@@ -4,13 +4,16 @@ import com.example.appfinanceiro.BuildConfig
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 
 data class LoginRequest(val email: String, val password: String)
 data class RegisterRequest(val name: String, val email: String, val password: String)
+data class ResetPasswordRequest(val email: String, val old_password: String, val new_password: String)
 
 data class LoginResponse(val message: String, val token: String)
 data class RegisterResponse(val message: String, val user_id: Int)
+data class ResetPasswordResponse(val message: String)
 
 interface AuthApi {
     @POST("api/auth/login")
@@ -18,6 +21,9 @@ interface AuthApi {
 
     @POST("api/auth/register")
     suspend fun register(@Body request: RegisterRequest): RegisterResponse
+
+    @PATCH("api/auth/users")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): ResetPasswordResponse
 }
 
 object RetrofitClient {

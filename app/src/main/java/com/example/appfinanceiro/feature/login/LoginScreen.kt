@@ -29,7 +29,8 @@ import com.example.appfinanceiro.core.network.RetrofitClient
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit
+    onNavigateToRegister: () -> Unit,
+    onNavigateToForgot: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
@@ -113,7 +114,9 @@ fun LoginScreen(
         )
 
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-            TextButton(onClick = { /* TODO */ }) { Text("Esqueci minha senha", color = PrimaryBlue) }
+            TextButton(onClick = onNavigateToForgot) {
+                Text("Esqueci minha senha", color = PrimaryBlue)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
