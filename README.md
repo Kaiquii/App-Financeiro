@@ -26,4 +26,4 @@ Para rodar este aplicativo no seu computador, você precisará do **Android Stud
 
 ### 1. Clonar o repositório
 ```bash
-git clone [https://github.com/seu-usuario/app-financeiro.git](https://github.com/seu-usuario/app-financeiro.git)
+git clone [https://github.com/Kaiquii/App-Financeiro.git](https://github.com/Kaiquii/App-Financeiro.git)
