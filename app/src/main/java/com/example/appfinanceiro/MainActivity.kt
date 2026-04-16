@@ -14,6 +14,7 @@ import com.example.appfinanceiro.core.designsystem.theme.AppFinanceiroTheme
 import com.example.appfinanceiro.feature.home.HomeScreen
 import com.example.appfinanceiro.feature.login.LoginScreen
 import com.example.appfinanceiro.feature.perfil.PerfilScreen
+import com.example.appfinanceiro.feature.login.RegisterScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,6 +35,20 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("home") {
                                         popUpTo("login") { inclusive = true }
                                     }
+                                },
+                                onNavigateToRegister = {
+                                    navController.navigate("register")
+                                }
+                            )
+                        }
+
+                        composable("register") {
+                            RegisterScreen(
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                },
+                                onRegisterSuccess = {
+                                    navController.popBackStack()
                                 }
                             )
                         }

@@ -2,35 +2,15 @@ package com.example.appfinanceiro.feature.login
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,17 +20,25 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextSecondary
+import com.example.appfinanceiro.core.network.LoginRequest
+import com.example.appfinanceiro.core.network.RetrofitClient
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var senhaVisivel by remember { mutableStateOf(false) }
     var erroLogin by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
     val textColor = MaterialTheme.colorScheme.onBackground
@@ -70,12 +58,7 @@ fun LoginScreen(
                 .background(surfaceColor, RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.AccountBalanceWallet,
-                contentDescription = "Logo",
-                tint = PrimaryBlue,
-                modifier = Modifier.size(32.dp)
-            )
+            Icon(imageVector = Icons.Default.AccountBalanceWallet, contentDescription = "Logo", tint = PrimaryBlue, modifier = Modifier.size(32.dp))
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -95,14 +78,12 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = surfaceColor,
-                focusedContainerColor = surfaceColor,
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = PrimaryBlue,
-                focusedTextColor = textColor,
-                unfocusedTextColor = textColor
+                unfocusedContainerColor = surfaceColor, focusedContainerColor = surfaceColor,
+                unfocusedBorderColor = Color.Transparent, focusedBorderColor = PrimaryBlue,
+                focusedTextColor = textColor, unfocusedTextColor = textColor
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            enabled = !isLoading
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -123,49 +104,65 @@ fun LoginScreen(
                 }
             },
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = surfaceColor,
-                focusedContainerColor = surfaceColor,
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = PrimaryBlue,
-                focusedTextColor = textColor,
-                unfocusedTextColor = textColor
+                unfocusedContainerColor = surfaceColor, focusedContainerColor = surfaceColor,
+                unfocusedBorderColor = Color.Transparent, focusedBorderColor = PrimaryBlue,
+                focusedTextColor = textColor, unfocusedTextColor = textColor
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            enabled = !isLoading
         )
 
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-            TextButton(onClick = { /* TODO */ }) {
-                Text("Esqueci minha senha", color = PrimaryBlue)
-            }
+            TextButton(onClick = { /* TODO */ }) { Text("Esqueci minha senha", color = PrimaryBlue) }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         if (erroLogin) {
-            Text("Credenciais inválidas.", color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+            Text("Credenciais inválidas ou erro no servidor.", color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
         Button(
             onClick = {
-                if (email == "kaiqui.lucaskaiquiluc@gmail.com" && senha == "4343") {
-                    onLoginSuccess()
+                if (email.isNotEmpty() && senha.isNotEmpty()) {
+                    coroutineScope.launch {
+                        isLoading = true
+                        erroLogin = false
+                        try {
+                            val response = RetrofitClient.authApi.login(LoginRequest(email, senha))
+                            println("Token recebido: ${response.token}")
+                            onLoginSuccess()
+
+                        } catch (e: Exception) {
+                            android.util.Log.e("API_ERRO", "Falha monstruosa no Login: ${e.message}", e)
+
+                            erroLogin = true
+                        } finally {
+                            isLoading = false
+                        }
+                    }
                 } else {
                     erroLogin = true
                 }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+            enabled = !isLoading
         ) {
-            Text("Entrar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+            } else {
+                Text("Entrar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
         Row(modifier = Modifier.padding(bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Não tem uma conta? ", color = TextSecondary)
-            Text("Cadastre-se", color = PrimaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { })
+            Text("Cadastre-se", color = PrimaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onNavigateToRegister() })
         }
     }
 }
