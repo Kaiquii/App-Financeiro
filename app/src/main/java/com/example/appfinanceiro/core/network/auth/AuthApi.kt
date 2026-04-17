@@ -1,6 +1,7 @@
-package com.example.appfinanceiro.core.network
+package com.example.appfinanceiro.core.network.auth
 
 import com.example.appfinanceiro.BuildConfig
+import com.example.appfinanceiro.core.network.FinanceApi
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -33,5 +34,13 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AuthApi::class.java)
+    }
+
+    val financeApi: FinanceApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(FinanceApi::class.java)
     }
 }

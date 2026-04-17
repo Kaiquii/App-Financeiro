@@ -14,17 +14,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.appfinanceiro.core.data.SessionManager
 import kotlinx.coroutines.launch
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextSecondary
-import com.example.appfinanceiro.core.network.LoginRequest
-import com.example.appfinanceiro.core.network.RetrofitClient
+import com.example.appfinanceiro.core.network.auth.LoginRequest
+import com.example.appfinanceiro.core.network.auth.RetrofitClient
 
 @Composable
 fun LoginScreen(
@@ -32,6 +34,8 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onNavigateToForgot: () -> Unit
 ) {
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var senhaVisivel by remember { mutableStateOf(false) }
@@ -134,7 +138,7 @@ fun LoginScreen(
                         erroLogin = false
                         try {
                             val response = RetrofitClient.authApi.login(LoginRequest(email, senha))
-                            println("Token recebido: ${response.token}")
+                            sessionManager.saveToken(response.token)
                             onLoginSuccess()
 
                         } catch (e: Exception) {

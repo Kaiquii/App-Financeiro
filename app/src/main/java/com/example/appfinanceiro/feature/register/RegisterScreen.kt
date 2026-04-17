@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextSecondary
-import com.example.appfinanceiro.core.network.RegisterRequest
-import com.example.appfinanceiro.core.network.RetrofitClient
+import com.example.appfinanceiro.core.network.auth.RegisterRequest
+import com.example.appfinanceiro.core.network.auth.RetrofitClient
 import kotlinx.coroutines.launch
 
 @Composable
