@@ -53,7 +53,7 @@ fun DespesasScreen(
     val textColor = Color.White
 
     var expensesData by remember { mutableStateOf<List<Expense>>(emptyList()) }
-    var categoriesMap by remember { mutableStateOf<Map<Int, String>>(emptyMap()) } // 👇 Novo mapa de categorias
+    var categoriesMap by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
     var refreshTrigger by remember { mutableIntStateOf(0) }
 
