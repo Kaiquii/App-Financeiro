@@ -2,53 +2,25 @@ package com.example.appfinanceiro.feature.perfil
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.components.ExitConfirmationDialog
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
@@ -61,8 +33,13 @@ fun PerfilScreen(
     onLogoutClick: () -> Unit = {},
     onNavigate: (Int) -> Unit = {}
 ) {
+    val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
+
+    val sessionManager = remember { SessionManager(context) }
+    val userName by sessionManager.userName.collectAsState(initial = "")
+    val userEmail by sessionManager.userEmail.collectAsState(initial = "")
 
     var showExitDialog by remember { mutableStateOf(false) }
 
@@ -90,7 +67,7 @@ fun PerfilScreen(
             StandardBottomBar(
                 itemSelecionado = 3,
                 onItemClick = onNavigate,
-                onAddClick = { /* TODO: Abrir tela de nova despesa */ }
+                onAddClick = { /* Abre Nova Despesa */ }
             )
         }
     ) { paddingValues ->
@@ -111,16 +88,35 @@ fun PerfilScreen(
                     .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Person, contentDescription = "Foto de perfil", tint = PrimaryBlue, modifier = Modifier.size(60.dp))
+                if (userName.isNotEmpty()) {
+                    Text(
+                        text = userName.first().uppercase(),
+                        color = PrimaryBlue,
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Icon(Icons.Default.Person, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(60.dp))
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Kaiqui Lucas", color = textColor, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Text("kaiqui.lucaskaiquiluc@email.com", color = TextMuted, fontSize = 14.sp)
+
+            Text(
+                text = userName.ifEmpty { "Carregando..." },
+                color = textColor,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+            Text(
+                text = userEmail.ifEmpty { "E-mail não identificado" },
+                color = TextMuted,
+                fontSize = 14.sp
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
-                onClick = { /* TODO: Editar Perfil */ },
+                onClick = { /* Editar Perfil */ },
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryBlue),
                 border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.5f))
@@ -166,9 +162,7 @@ private fun SectionTitle(title: String) {
         color = MaterialTheme.colorScheme.onBackground,
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp)
+        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
     )
 }
 
@@ -182,7 +176,7 @@ private fun SettingsItem(icon: ImageVector, iconColor: Color, title: String, sub
             .fillMaxWidth()
             .padding(bottom = 8.dp)
             .background(cardBg, RoundedCornerShape(12.dp))
-            .clickable { /* TODO: Ação do item */ }
+            .clickable { /* Ação */ }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

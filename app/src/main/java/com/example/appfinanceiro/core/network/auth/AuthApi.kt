@@ -12,7 +12,17 @@ data class LoginRequest(val email: String, val password: String)
 data class RegisterRequest(val name: String, val email: String, val password: String)
 data class ResetPasswordRequest(val email: String, val old_password: String, val new_password: String)
 
-data class LoginResponse(val message: String, val token: String)
+data class UserResponse(
+    val name: String,
+    val email: String
+)
+
+data class LoginResponse(
+    val message: String,
+    val token: String,
+    val user: UserResponse
+)
+
 data class RegisterResponse(val message: String, val user_id: Int)
 data class ResetPasswordResponse(val message: String)
 

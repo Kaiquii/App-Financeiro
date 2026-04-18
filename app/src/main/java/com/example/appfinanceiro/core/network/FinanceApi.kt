@@ -57,6 +57,16 @@ data class DefaultResponse(
     val message: String
 )
 
+data class ExpenseUpdateRequest(
+    val amount: Double? = null,
+    val description: String? = null,
+    val category_id: Int? = null,
+    val payment_source: String? = null,
+    val type: String? = null,
+    val date: String? = null,
+    val update_future: Boolean? = null
+)
+
 interface FinanceApi {
     @GET("api/reports/summary")
     suspend fun getSummary(
@@ -89,4 +99,24 @@ interface FinanceApi {
         @retrofit2.http.Header("Authorization") token: String,
         @retrofit2.http.Body request: ExpenseRequest
     ): DefaultResponse
+
+    @retrofit2.http.PATCH("api/expenses/{id}")
+    suspend fun updateExpense(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Path("id") id: Int,
+        @retrofit2.http.Body request: ExpenseUpdateRequest
+    ): DefaultResponse
+
+    @retrofit2.http.DELETE("api/expenses/{id}")
+    suspend fun deleteExpense(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Path("id") id: Int,
+        @retrofit2.http.Query("delete_future") deleteFuture: Boolean? = null
+    ): DefaultResponse
+
+    @retrofit2.http.GET("api/expenses/{id}")
+    suspend fun getExpenseById(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Path("id") id: Int
+    ): Expense
 }

@@ -138,12 +138,17 @@ fun LoginScreen(
                         erroLogin = false
                         try {
                             val response = RetrofitClient.authApi.login(LoginRequest(email, senha))
-                            sessionManager.saveToken(response.token)
+
+                            sessionManager.saveToken(
+                                token = response.token,
+                                name = response.user.name,
+                                email = response.user.email
+                            )
+
                             onLoginSuccess()
 
                         } catch (e: Exception) {
-                            android.util.Log.e("API_ERRO", "Falha monstruosa no Login: ${e.message}", e)
-
+                            android.util.Log.e("API_ERRO", "Erro no login: ${e.message}")
                             erroLogin = true
                         } finally {
                             isLoading = false

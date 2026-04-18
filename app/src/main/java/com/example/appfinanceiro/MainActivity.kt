@@ -14,6 +14,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.theme.AppFinanceiroTheme
+import com.example.appfinanceiro.feature.despesas.DespesasScreen
+import com.example.appfinanceiro.feature.despesas.EditarDespesaScreen
 import com.example.appfinanceiro.feature.despesas.NovaDespesaScreen
 import com.example.appfinanceiro.feature.home.HomeScreen
 import com.example.appfinanceiro.feature.login.LoginScreen
@@ -77,8 +79,9 @@ class MainActivity : ComponentActivity() {
                         composable("home") {
                             HomeScreen(
                                 onNavigate = { tabIndex ->
-                                    if (tabIndex == 3) {
-                                        navController.navigate("perfil") { launchSingleTop = true }
+                                    when (tabIndex) {
+                                        1 -> navController.navigate("despesas") { launchSingleTop = true }
+                                        3 -> navController.navigate("perfil") { launchSingleTop = true }
                                     }
                                 },
                                 onAddClick = {
@@ -95,11 +98,13 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onNavigate = { tabIndex ->
-                                    if (tabIndex == 0) {
-                                        navController.navigate("home") {
+                                    when (tabIndex) {
+                                        0 -> navController.navigate("home") {
                                             popUpTo("home") { inclusive = true }
                                             launchSingleTop = true
                                         }
+                                        // 👇 ENSINA A IR PARA DESPESAS A PARTIR DO PERFIL
+                                        1 -> navController.navigate("despesas") { launchSingleTop = true }
                                     }
                                 }
                             )
@@ -111,6 +116,36 @@ class MainActivity : ComponentActivity() {
                                     navController.popBackStack()
                                 }
                             )
+                        }
+
+                        composable("despesas") {
+                            DespesasScreen(
+                                onNavigate = { tabIndex ->
+                                    when (tabIndex) {
+                                        0 -> navController.navigate("home") {
+                                            popUpTo("home") { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                        3 -> navController.navigate("perfil") { launchSingleTop = true }
+                                    }
+                                },
+                                onAddClick = {
+                                    navController.navigate("nova_despesa")
+                                },
+                                onEditClick = { expenseId ->
+                                    navController.navigate("editar_despesa/$expenseId")
+                                }
+                            )
+                        }
+
+                        composable("editar_despesa/{expenseId}") { backStackEntry ->
+                            val expenseId = backStackEntry.arguments?.getString("expenseId")?.toIntOrNull()
+                            if (expenseId != null) {
+                                EditarDespesaScreen(
+                                    expenseId = expenseId,
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
                         }
                     }
                 }
