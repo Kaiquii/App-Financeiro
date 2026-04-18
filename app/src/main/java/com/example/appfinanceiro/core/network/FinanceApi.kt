@@ -13,6 +13,9 @@ data class SummaryResponse(
     val restante_salario: Double,
     val restante_adiantamento: Double,
     val restante_renda_extra: Double,
+    val total_gasto_salario: Double,
+    val total_gasto_adiantamento: Double,
+    val total_gasto_renda_extra: Double,
     val total_expense: Double,
     val total_geral_disponivel: Double,
     val total_income: Double
