@@ -61,7 +61,7 @@ fun ResumoFinanceiroSection(isLoading: Boolean, data: SummaryResponse?) {
                 val totalDisp = data?.total_geral_disponivel ?: 0.0
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SummaryCard(title = "Salário", value = formatCurrency(salario), bgColor = cardBg, valueColor = textColor, modifier = Modifier.weight(1f))
+                    SummaryCard(title = "Salario", value = formatCurrency(salario), bgColor = cardBg, valueColor = textColor, modifier = Modifier.weight(1f))
                     SummaryCard(title = "Adiantamento", value = formatCurrency(adiantamento), bgColor = cardBg, valueColor = textColor, modifier = Modifier.weight(1f))
                 }
 

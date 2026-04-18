@@ -15,12 +15,12 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Kaiqui\.android\avd\Pixel_10_Pro.avd" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=RQCW402W72E" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=RQCW402W72E" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Kaiqui\.android\avd\Pixel_10_Pro.avd" />
               </handle>
             </Target>
           </targets>

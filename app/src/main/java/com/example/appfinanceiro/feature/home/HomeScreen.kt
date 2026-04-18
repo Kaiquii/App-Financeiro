@@ -68,10 +68,39 @@ fun HomeScreen(
                 val catResponse = RetrofitClient.financeApi.getCategories("Bearer $userToken")
                 categoriesMap = catResponse.categories.associate { it.id to it.name }
 
-                val sumResponse = RetrofitClient.financeApi.getSummary("Bearer $userToken", currentMonthIndex + 1, currentYear)
-                summaryData = sumResponse
+                val sumResponse = RetrofitClient.financeApi.getSummary(
+                    "Bearer $userToken",
+                    currentMonthIndex + 1,
+                    currentYear
+                )
 
-                val expResponse = RetrofitClient.financeApi.getExpenses("Bearer $userToken", currentMonthIndex + 1, currentYear)
+                val incomesResponse = RetrofitClient.financeApi.getIncomes(
+                    "Bearer $userToken",
+                    currentMonthIndex + 1,
+                    currentYear
+                )
+
+                val salarioFromIncomes = incomesResponse.incomes
+                    .filter {
+                        it.source.equals("Salario", ignoreCase = true) ||
+                                it.source.equals("Salário", ignoreCase = true)
+                    }
+                    .sumOf { it.amount }
+
+                val adiantamentoFromIncomes = incomesResponse.incomes
+                    .filter { it.source.equals("Adiantamento", ignoreCase = true) }
+                    .sumOf { it.amount }
+
+                summaryData = sumResponse.copy(
+                    salario = salarioFromIncomes,
+                    adiantamento = adiantamentoFromIncomes
+                )
+
+                val expResponse = RetrofitClient.financeApi.getExpenses(
+                    "Bearer $userToken",
+                    currentMonthIndex + 1,
+                    currentYear
+                )
                 expensesData = expResponse.expenses
 
             } catch (e: Exception) {
@@ -90,7 +119,9 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Visão Mensal", color = textColor, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = { /* TODO: Voltar */ }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor) }
+                    IconButton(onClick = { /* TODO: Voltar */ }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor)
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
             )
@@ -104,7 +135,10 @@ fun HomeScreen(
         }
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {

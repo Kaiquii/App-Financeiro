@@ -62,7 +62,7 @@ fun NovaDespesaScreen(onNavigateBack: () -> Unit) {
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    var isParcelado by remember { mutableStateOf(false) }
+    var selectedType by remember { mutableStateOf("Única") }
     var installments by remember { mutableIntStateOf(1) }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -145,10 +145,21 @@ fun NovaDespesaScreen(onNavigateBack: () -> Unit) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
-            PaymentTypeSelector(isParcelado = isParcelado, onTypeChange = { isParcelado = it })
-            if (isParcelado) {
-                InstallmentCounter(installments = installments, onInstallmentChange = { installments = it })
+            PaymentTypeSelector(
+                selectedType = selectedType,
+                onTypeChange = {
+                    selectedType = it
+                    if (it != "Parcelada") installments = 1
+                }
+            )
+
+            if (selectedType == "Parcelada") {
+                InstallmentCounter(
+                    installments = installments,
+                    onInstallmentChange = { installments = it }
+                )
             }
+
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -163,7 +174,16 @@ fun NovaDespesaScreen(onNavigateBack: () -> Unit) {
                         try {
                             val finalAmount = amountText.replace(",", ".").toDoubleOrNull() ?: 0.0
                             val parsedDate = try { displayFormat.parse(dateText) ?: calendar.time } catch (e: Exception) { calendar.time }
-                            val request = ExpenseRequest(finalAmount, description, selectedCategory!!.id, selectedSource, dateFormat.format(parsedDate), if (isParcelado) "Parcelada" else "Única", if (isParcelado) installments else 1)
+                            val request = ExpenseRequest(
+                                amount = finalAmount,
+                                description = description,
+                                category_id = selectedCategory!!.id,
+                                payment_source = selectedSource,
+                                date = dateFormat.format(parsedDate),
+                                type = selectedType,
+                                installments = if (selectedType == "Parcelada") installments else 1
+                            )
+
 
                             RetrofitClient.financeApi.createExpense("Bearer $userToken", request)
                             Toast.makeText(context, "Despesa salva com sucesso!", Toast.LENGTH_SHORT).show()

@@ -89,8 +89,10 @@ fun DespesasScreen(
         val matchesType = when (selectedFilter) {
             "Parceladas" -> expense.type.equals("Parcelada", ignoreCase = true)
             "Únicas" -> expense.type.equals("Única", ignoreCase = true)
+            "Fixas" -> expense.type.equals("Fixa", ignoreCase = true)
             else -> true
         }
+
         matchesSearch && matchesType
     }
 
@@ -131,8 +133,8 @@ fun DespesasScreen(
             )
 
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Todas", "Parceladas", "Únicas").forEach { filter ->
-                    val isSelected = selectedFilter == filter
+                listOf("Todas", "Parceladas", "Únicas", "Fixas").forEach { filter ->
+                val isSelected = selectedFilter == filter
                     Box(
                         modifier = Modifier
                             .background(if (isSelected) PrimaryBlue else inputBgColor, RoundedCornerShape(20.dp))
@@ -175,8 +177,8 @@ fun DespesasScreen(
     }
 
     if (expenseToDelete != null) {
-        val isRepeating = expenseToDelete?.type?.equals("Parcelada", ignoreCase = true) == true ||
-                expenseToDelete?.type?.equals("Fixa", ignoreCase = true) == true
+        val isInstallmentExpense = expenseToDelete?.type?.equals("Parcelada", ignoreCase = true) == true
+        val isFixedExpense = expenseToDelete?.type?.equals("Fixa", ignoreCase = true) == true
 
         var deleteFutureSelected by remember { mutableStateOf(false) }
 
@@ -190,7 +192,14 @@ fun DespesasScreen(
                 Column {
                     Text("Tem certeza que deseja excluir '${expenseToDelete?.description}'?", color = Color.White)
 
-                    if (isRepeating) {
+                    if (isFixedExpense) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Esta exclusão removerá esta despesa no mês atual e também nos próximos meses.",
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
+                    } else if (isInstallmentExpense) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -204,6 +213,7 @@ fun DespesasScreen(
                             Text("Excluir esta e todas as futuras", color = Color.White, fontSize = 14.sp)
                         }
                     }
+
                 }
             },
             confirmButton = {
@@ -212,11 +222,10 @@ fun DespesasScreen(
                         isDeleting = true
                         coroutineScope.launch {
                             try {
-                                // 👇 Enviamos o parâmetro baseado no Checkbox
                                 RetrofitClient.financeApi.deleteExpense(
                                     token = "Bearer $userToken",
                                     id = expenseToDelete!!.id,
-                                    deleteFuture = if (deleteFutureSelected) true else null
+                                    deleteFuture = if (isInstallmentExpense && deleteFutureSelected) true else null
                                 )
                                 Toast.makeText(context, "Excluído com sucesso!", Toast.LENGTH_SHORT).show()
                                 expenseToDelete = null
@@ -251,11 +260,12 @@ fun DespesaListItem(expense: Expense, categoriesMap: Map<Int, String>, onEdit: (
         if (date != null) dateFormat.format(date) else "00/00"
     } catch (e: Exception) { "00/00" }
 
-    val typeLabel = if (expense.type.equals("Parcelada", ignoreCase = true)) {
-        "Parc. ${expense.current_installment}/${expense.installments}"
-    } else {
-        "Única"
+    val typeLabel = when {
+        expense.type.equals("Parcelada", ignoreCase = true) -> "Parc. ${expense.current_installment}/${expense.installments}"
+        expense.type.equals("Fixa", ignoreCase = true) -> "Fixa"
+        else -> "Única"
     }
+
 
     val formatter = java.text.NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
     val formattedAmount = formatter.format(expense.amount)

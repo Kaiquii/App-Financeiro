@@ -64,6 +64,7 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
     val datePickerState = rememberDatePickerState()
 
     var originalType by remember { mutableStateOf("Única") }
+    var showFixedExpenseConfirmation by remember { mutableStateOf(false) }
 
     var updateFuture by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
@@ -170,10 +171,13 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
-                if (originalType.equals("Parcelada", ignoreCase = true) || originalType.equals("Fixa", ignoreCase = true)) {
+                if (originalType.equals("Parcelada", ignoreCase = true)) {
                     Spacer(modifier = Modifier.height(24.dp))
                     Row(
-                        modifier = Modifier.fillMaxWidth().background(inputBgColor, RoundedCornerShape(12.dp)).padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(inputBgColor, RoundedCornerShape(12.dp))
+                            .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -184,10 +188,30 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                         Switch(
                             checked = updateFuture,
                             onCheckedChange = { updateFuture = it },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = PrimaryBlue)
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = PrimaryBlue
+                            )
                         )
                     }
                 }
+
+                if (originalType.equals("Fixa", ignoreCase = true)) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = inputBgColor
+                    ) {
+                        Text(
+                            text = "Ao salvar, esta alteração será aplicada ao mês atual e aos próximos meses desta despesa fixa.",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
+
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -197,11 +221,21 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                             Toast.makeText(context, "Preencha os campos!", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
+
+                        if (originalType.equals("Fixa", ignoreCase = true)) {
+                            showFixedExpenseConfirmation = true
+                            return@Button
+                        }
+
                         isLoading = true
                         coroutineScope.launch {
                             try {
                                 val finalAmount = amountText.replace(",", ".").toDoubleOrNull() ?: 0.0
-                                val parsedDate = try { displayFormat.parse(dateText) ?: calendar.time } catch (e: Exception) { calendar.time }
+                                val parsedDate = try {
+                                    displayFormat.parse(dateText) ?: calendar.time
+                                } catch (e: Exception) {
+                                    calendar.time
+                                }
 
                                 val request = ExpenseUpdateRequest(
                                     amount = finalAmount,
@@ -209,7 +243,7 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                                     category_id = selectedCategory!!.id,
                                     payment_source = selectedSource,
                                     date = dateFormat.format(parsedDate),
-                                    update_future = if (originalType.equals("Parcelada", ignoreCase = true) || originalType.equals("Fixa", ignoreCase = true)) updateFuture else null
+                                    update_future = if (originalType.equals("Parcelada", ignoreCase = true)) updateFuture else null
                                 )
 
                                 RetrofitClient.financeApi.updateExpense("Bearer $userToken", expenseId, request)
@@ -217,17 +251,79 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                                 onNavigateBack()
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Erro ao atualizar", Toast.LENGTH_SHORT).show()
-                            } finally { isLoading = false }
+                            } finally {
+                                isLoading = false
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                 ) {
-                    Text("Salvar Alterações", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(
+                        "Salvar Alterações",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
+
                 Spacer(modifier = Modifier.height(32.dp))
+
+            }
+
+            if (showFixedExpenseConfirmation) {
+                AlertDialog(
+                    onDismissRequest = { if (!isLoading) showFixedExpenseConfirmation = false },
+                    title = { Text("Atualizar despesa fixa") },
+                    text = {
+                        Text("Esta alteração será aplicada ao mês atual e aos próximos meses desta despesa fixa.")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showFixedExpenseConfirmation = false
+                                isLoading = true
+                                coroutineScope.launch {
+                                    try {
+                                        val finalAmount = amountText.replace(",", ".").toDoubleOrNull() ?: 0.0
+                                        val parsedDate = try { displayFormat.parse(dateText) ?: calendar.time } catch (e: Exception) { calendar.time }
+
+                                        val request = ExpenseUpdateRequest(
+                                            amount = finalAmount,
+                                            description = description,
+                                            category_id = selectedCategory!!.id,
+                                            payment_source = selectedSource,
+                                            date = dateFormat.format(parsedDate),
+                                            update_future = null
+                                        )
+
+                                        RetrofitClient.financeApi.updateExpense("Bearer $userToken", expenseId, request)
+                                        Toast.makeText(context, "Despesa atualizada!", Toast.LENGTH_SHORT).show()
+                                        onNavigateBack()
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Erro ao atualizar", Toast.LENGTH_SHORT).show()
+                                    } finally {
+                                        isLoading = false
+                                    }
+                                }
+                            },
+                            enabled = !isLoading
+                        ) {
+                            Text("Confirmar", color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showFixedExpenseConfirmation = false },
+                            enabled = !isLoading
+                        ) {
+                            Text("Cancelar", color = TextMuted)
+                        }
+                    }
+                )
             }
         }
+
     }
 }

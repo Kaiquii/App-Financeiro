@@ -90,22 +90,44 @@ fun CustomDropdown(
 }
 
 @Composable
-fun PaymentTypeSelector(isParcelado: Boolean, onTypeChange: (Boolean) -> Unit) {
+fun PaymentTypeSelector(
+    selectedType: String,
+    onTypeChange: (String) -> Unit
+) {
     val inputBgColor = Color(0xFF1E232D)
+    val options = listOf("Única", "Parcelada", "Fixa")
 
     FormLabel("Tipo de Pagamento")
-    Row(modifier = Modifier.fillMaxWidth().height(50.dp).background(inputBgColor, RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp))) {
-        Box(
-            modifier = Modifier.weight(1f).fillMaxHeight().background(if (!isParcelado) PrimaryBlue.copy(alpha = 0.2f) else Color.Transparent).clickable { onTypeChange(false) },
-            contentAlignment = Alignment.Center
-        ) { Text("Única", color = if (!isParcelado) PrimaryBlue else TextMuted, fontWeight = FontWeight.Bold) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .background(inputBgColor, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
+    ) {
+        options.forEach { option ->
+            val isSelected = selectedType.equals(option, ignoreCase = true)
 
-        Box(
-            modifier = Modifier.weight(1f).fillMaxHeight().background(if (isParcelado) PrimaryBlue.copy(alpha = 0.2f) else Color.Transparent).clickable { onTypeChange(true) },
-            contentAlignment = Alignment.Center
-        ) { Text("Parcelada", color = if (isParcelado) PrimaryBlue else TextMuted, fontWeight = FontWeight.Bold) }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .background(
+                        if (isSelected) PrimaryBlue.copy(alpha = 0.2f) else Color.Transparent
+                    )
+                    .clickable { onTypeChange(option) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = option,
+                    color = if (isSelected) PrimaryBlue else TextMuted,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }
+
 
 @Composable
 fun InstallmentCounter(installments: Int, onInstallmentChange: (Int) -> Unit) {
