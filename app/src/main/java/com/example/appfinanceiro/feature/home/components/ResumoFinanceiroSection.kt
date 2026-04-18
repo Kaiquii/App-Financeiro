@@ -19,21 +19,15 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.theme.*
-import com.example.appfinanceiro.core.network.home.utils.formatCurrency
+import com.example.appfinanceiro.core.network.SummaryResponse
+import com.example.appfinanceiro.feature.home.utils.formatCurrency
 
 @Composable
-fun ResumoFinanceiroSection(
-    isLoading: Boolean,
-    salario: Double,
-    adiantamento: Double,
-    rendaExtra: Double,
-    restSalario: Double,
-    restAdiant: Double,
-    totalDisp: Double
-) {
+fun ResumoFinanceiroSection(isLoading: Boolean, data: SummaryResponse?) {
     val isDark = isSystemInDarkTheme()
     val textColor = MaterialTheme.colorScheme.onBackground
     val cardBg = MaterialTheme.colorScheme.surface
@@ -44,7 +38,7 @@ fun ResumoFinanceiroSection(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Resumo Financeiro", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                if (isLoading) {
+                if (isLoading && data != null) {
                     Spacer(modifier = Modifier.width(8.dp))
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), color = PrimaryBlue, strokeWidth = 2.dp)
                 }
@@ -52,23 +46,40 @@ fun ResumoFinanceiroSection(
             Text("Editar", color = PrimaryBlue, fontSize = 14.sp, modifier = Modifier.clickable { /* TODO */ })
         }
 
-        Column(modifier = Modifier.alpha(if (isLoading) 0.5f else 1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SummaryCard(title = "Salário", value = formatCurrency(salario), bgColor = cardBg, valueColor = textColor, modifier = Modifier.weight(1f))
-                SummaryCard(title = "Adiantamento", value = formatCurrency(adiantamento), bgColor = cardBg, valueColor = textColor, modifier = Modifier.weight(1f))
+        if (data == null && isLoading) {
+            Box(modifier = Modifier.fillMaxWidth().height(250.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = PrimaryBlue)
             }
-            SummaryCard(title = "Renda Extra", value = "+ ${formatCurrency(rendaExtra)}", bgColor = cardBg, valueColor = GreenPositive, icon = Icons.Default.TrendingUp)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SummaryCard(title = "Restante Salário", value = formatCurrency(restSalario), bgColor = cardPurple, valueColor = textColor, modifier = Modifier.weight(1f))
-                SummaryCard(title = "Restante Adiant.", value = formatCurrency(restAdiant), bgColor = cardPurple, valueColor = textColor, modifier = Modifier.weight(1f))
+        } else {
+            Column(modifier = Modifier.alpha(if (isLoading) 0.5f else 1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
+                val salario = data?.salario ?: 0.0
+                val adiantamento = data?.adiantamento ?: 0.0
+                val rendaExtraDisp = data?.restante_renda_extra ?: 0.0
+                val restSalario = data?.restante_salario ?: 0.0
+                val restAdiant = data?.restante_adiantamento ?: 0.0
+                val totalDisp = data?.total_geral_disponivel ?: 0.0
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SummaryCard(title = "Salário", value = formatCurrency(salario), bgColor = cardBg, valueColor = textColor, modifier = Modifier.weight(1f))
+                    SummaryCard(title = "Adiantamento", value = formatCurrency(adiantamento), bgColor = cardBg, valueColor = textColor, modifier = Modifier.weight(1f))
+                }
+
+                SummaryCard(title = "Renda Extra (Disponível)", value = "+ ${formatCurrency(rendaExtraDisp)}", bgColor = cardBg, valueColor = GreenPositive, icon = Icons.Default.TrendingUp)
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SummaryCard(title = "Restante Salário", value = formatCurrency(restSalario), bgColor = cardPurple, valueColor = textColor, modifier = Modifier.weight(1f))
+                    SummaryCard(title = "Restante Adiant.", value = formatCurrency(restAdiant), bgColor = cardPurple, valueColor = textColor, modifier = Modifier.weight(1f))
+                }
+
+                SummaryCard(title = "Total Geral Disponível", value = formatCurrency(totalDisp), valueSize = 24.sp, valueColor = PrimaryBlue, bgColor = cardBlue, icon = Icons.Default.AccountBalanceWallet)
             }
-            SummaryCard(title = "Total Geral Disponível", value = formatCurrency(totalDisp), valueSize = 24.sp, valueColor = PrimaryBlue, bgColor = cardBlue, icon = Icons.Default.AccountBalanceWallet)
         }
     }
 }
 
 @Composable
-private fun SummaryCard(title: String, value: String, modifier: Modifier = Modifier, bgColor: Color, valueColor: Color, valueSize: androidx.compose.ui.unit.TextUnit = 18.sp, icon: ImageVector? = null) {
+private fun SummaryCard(title: String, value: String, modifier: Modifier = Modifier, bgColor: Color, valueColor: Color, valueSize: TextUnit = 18.sp, icon: ImageVector? = null) {
     Box(modifier = modifier.background(bgColor, RoundedCornerShape(12.dp)).padding(16.dp)) {
         Column {
             Text(title, color = TextMuted, fontSize = 12.sp)

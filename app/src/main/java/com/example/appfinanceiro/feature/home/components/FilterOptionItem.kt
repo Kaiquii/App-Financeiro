@@ -1,4 +1,4 @@
-package com.example.appfinanceiro.core.network.home.components
+package com.example.appfinanceiro.feature.home.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

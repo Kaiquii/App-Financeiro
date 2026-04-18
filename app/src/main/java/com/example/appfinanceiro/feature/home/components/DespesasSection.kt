@@ -1,4 +1,4 @@
-package com.example.appfinanceiro.core.network.home.components
+package com.example.appfinanceiro.feature.home.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Icon
@@ -24,12 +25,12 @@ import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 import com.example.appfinanceiro.core.network.Expense
-import com.example.appfinanceiro.core.network.home.utils.formatCurrency
-import com.example.appfinanceiro.core.network.home.utils.formatExpenseDate
-import com.example.appfinanceiro.core.network.home.utils.getCategoryIconAndColor
+import com.example.appfinanceiro.feature.home.utils.formatCurrency
+import com.example.appfinanceiro.feature.home.utils.formatExpenseDate
+import com.example.appfinanceiro.feature.home.utils.getCategoryIconAndColor
 
 @Composable
-fun DespesasSection(isLoading: Boolean, expenses: List<Expense>, categoriesMap: Map<Int, String>, onFilterClick: () -> Unit, isFiltered: Boolean) {
+fun DespesasSection(isLoading: Boolean, expenses: List<Expense>, categoriesMap: Map<Int, String>, onFilterClick: () -> Unit, isFiltered: Boolean, onAddClick: () -> Unit) {
     val textColor = MaterialTheme.colorScheme.onBackground
     val cardBg = MaterialTheme.colorScheme.surface
 
@@ -69,12 +70,21 @@ fun DespesasSection(isLoading: Boolean, expenses: List<Expense>, categoriesMap: 
                     expense.type
                 }
 
-                ExpenseItem(icon = icon, iconColor = color, title = expense.description, type = typeText, date = formattedDate, value = "- ${formatCurrency(expense.amount)}")
+                ExpenseItem(
+                    icon = icon,
+                    iconColor = color,
+                    title = expense.description,
+                    categoryName = categoryName,
+                    paymentSource = expense.payment_source ?: "Não informado",
+                    type = typeText,
+                    date = formattedDate,
+                    value = "- ${formatCurrency(expense.amount)}"
+                )
             }
         }
 
         Box(
-            modifier = Modifier.fillMaxWidth().border(1.dp, TextMuted.copy(alpha = 0.5f), RoundedCornerShape(12.dp)).padding(16.dp).clickable { /* TODO */ },
+            modifier = Modifier.fillMaxWidth().border(1.dp, TextMuted.copy(alpha = 0.5f), RoundedCornerShape(12.dp)).padding(16.dp).clickable { onAddClick() },
             contentAlignment = Alignment.Center
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -87,18 +97,33 @@ fun DespesasSection(isLoading: Boolean, expenses: List<Expense>, categoriesMap: 
 }
 
 @Composable
-private fun ExpenseItem(icon: ImageVector, iconColor: Color, title: String, type: String, date: String, value: String) {
+private fun ExpenseItem(
+    icon: ImageVector,
+    iconColor: Color,
+    title: String,
+    categoryName: String,
+    paymentSource: String,
+    type: String,
+    date: String,
+    value: String
+) {
     val textColor = MaterialTheme.colorScheme.onBackground
     val cardBg = MaterialTheme.colorScheme.surface
 
-    Row(modifier = Modifier.fillMaxWidth().background(cardBg, RoundedCornerShape(12.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier.fillMaxWidth().background(cardBg, RoundedCornerShape(12.dp)).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Box(modifier = Modifier.size(40.dp).background(iconColor.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = iconColor)
         }
+
         Spacer(modifier = Modifier.width(12.dp))
+
         Column(modifier = Modifier.weight(1f)) {
             Text(title, color = textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Spacer(modifier = Modifier.height(4.dp))
+            Text(categoryName, color = TextMuted, fontSize = 12.sp)
+            Spacer(modifier = Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.background(TextMuted.copy(alpha = 0.2f), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)) {
                     Text(type, color = TextMuted, fontSize = 10.sp)
@@ -107,6 +132,15 @@ private fun ExpenseItem(icon: ImageVector, iconColor: Color, title: String, type
                 Text("• $date", color = TextMuted, fontSize = 10.sp)
             }
         }
-        Text(value, color = textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+
+        Column(horizontalAlignment = Alignment.End) {
+            Text(value, color = textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Fonte", tint = PrimaryBlue, modifier = Modifier.size(12.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(paymentSource, color = TextMuted, fontSize = 11.sp)
+            }
+        }
     }
 }

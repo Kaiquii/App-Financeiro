@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.theme.AppFinanceiroTheme
+import com.example.appfinanceiro.feature.despesas.NovaDespesaScreen
 import com.example.appfinanceiro.feature.home.HomeScreen
 import com.example.appfinanceiro.feature.login.LoginScreen
 import com.example.appfinanceiro.feature.perfil.PerfilScreen
@@ -79,6 +80,9 @@ class MainActivity : ComponentActivity() {
                                     if (tabIndex == 3) {
                                         navController.navigate("perfil") { launchSingleTop = true }
                                     }
+                                },
+                                onAddClick = {
+                                    navController.navigate("nova_despesa")
                                 }
                             )
                         }
@@ -97,6 +101,14 @@ class MainActivity : ComponentActivity() {
                                             launchSingleTop = true
                                         }
                                     }
+                                }
+                            )
+                        }
+
+                        composable("nova_despesa") {
+                            NovaDespesaScreen(
+                                onNavigateBack = {
+                                    navController.popBackStack()
                                 }
                             )
                         }

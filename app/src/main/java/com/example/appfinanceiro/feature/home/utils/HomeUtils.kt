@@ -1,4 +1,4 @@
-package com.example.appfinanceiro.core.network.home.utils
+package com.example.appfinanceiro.feature.home.utils
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FlashOn

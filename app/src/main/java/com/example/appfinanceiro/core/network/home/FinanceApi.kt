@@ -7,9 +7,12 @@ import retrofit2.http.Query
 data class SummaryResponse(
     val month: Int,
     val year: Int,
+    val salario: Double,
+    val adiantamento: Double,
     val renda_extra_amt: Double,
-    val restante_adiantamento: Double,
     val restante_salario: Double,
+    val restante_adiantamento: Double,
+    val restante_renda_extra: Double,
     val total_expense: Double,
     val total_geral_disponivel: Double,
     val total_income: Double
@@ -40,6 +43,20 @@ data class Income(
 )
 data class IncomesResponse(val incomes: List<Income>, val total: Int)
 
+data class ExpenseRequest(
+    val amount: Double,
+    val description: String,
+    val category_id: Int,
+    val payment_source: String,
+    val date: String,
+    val type: String,
+    val installments: Int
+)
+
+data class DefaultResponse(
+    val message: String
+)
+
 interface FinanceApi {
     @GET("api/reports/summary")
     suspend fun getSummary(
@@ -66,4 +83,10 @@ interface FinanceApi {
         @Query("month") month: Int,
         @Query("year") year: Int
     ): IncomesResponse
+
+    @retrofit2.http.POST("api/expenses/")
+    suspend fun createExpense(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Body request: ExpenseRequest
+    ): DefaultResponse
 }

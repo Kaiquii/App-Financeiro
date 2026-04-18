@@ -14,17 +14,19 @@ import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.network.Expense
-import com.example.appfinanceiro.core.network.Income
+import com.example.appfinanceiro.core.network.SummaryResponse
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
-import com.example.appfinanceiro.core.network.home.components.DespesasSection
-import com.example.appfinanceiro.core.network.home.components.FilterOptionItem
-import com.example.appfinanceiro.core.network.home.components.MonthSelector
+import com.example.appfinanceiro.feature.home.components.FilterOptionItem
+import com.example.appfinanceiro.feature.home.components.MonthSelector
 import com.example.appfinanceiro.feature.home.components.*
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onNavigate: (Int) -> Unit = {}) {
+fun HomeScreen(
+    onNavigate: (Int) -> Unit = {},
+    onAddClick: () -> Unit = {}
+) {
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
     val context = LocalContext.current
@@ -35,7 +37,7 @@ fun HomeScreen(onNavigate: (Int) -> Unit = {}) {
     var currentMonthIndex by remember { mutableIntStateOf(Calendar.getInstance().get(Calendar.MONTH)) }
     var currentYear by remember { mutableIntStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
 
-    var incomesData by remember { mutableStateOf<List<Income>>(emptyList()) }
+    var summaryData by remember { mutableStateOf<SummaryResponse?>(null) }
     var expensesData by remember { mutableStateOf<List<Expense>>(emptyList()) }
     var categoriesMap by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -48,17 +50,6 @@ fun HomeScreen(onNavigate: (Int) -> Unit = {}) {
     } else {
         expensesData.filter { it.category_id == selectedCategoryId }
     }
-
-    val salarioTotal = incomesData.filter { it.source.equals("Salário", ignoreCase = true) }.sumOf { it.amount }
-    val adiantamentoTotal = incomesData.filter { it.source.equals("Adiantamento", ignoreCase = true) }.sumOf { it.amount }
-    val rendaExtraTotal = incomesData.filter { it.source.equals("Renda Extra", ignoreCase = true) }.sumOf { it.amount }
-
-    val despesasSalario = expensesData.filter { it.payment_source.equals("Salário", ignoreCase = true) }.sumOf { it.amount }
-    val despesasAdiantamento = expensesData.filter { it.payment_source.equals("Adiantamento", ignoreCase = true) }.sumOf { it.amount }
-
-    val restanteSalario = salarioTotal - despesasSalario
-    val restanteAdiantamento = adiantamentoTotal - despesasAdiantamento
-    val totalGeralDisponivel = restanteSalario + restanteAdiantamento + rendaExtraTotal
 
     fun changeMonth(amount: Int) {
         val cal = Calendar.getInstance().apply {
@@ -77,15 +68,15 @@ fun HomeScreen(onNavigate: (Int) -> Unit = {}) {
                 val catResponse = RetrofitClient.financeApi.getCategories("Bearer $userToken")
                 categoriesMap = catResponse.categories.associate { it.id to it.name }
 
-                val incResponse = RetrofitClient.financeApi.getIncomes("Bearer $userToken", currentMonthIndex + 1, currentYear)
-                incomesData = incResponse.incomes
+                val sumResponse = RetrofitClient.financeApi.getSummary("Bearer $userToken", currentMonthIndex + 1, currentYear)
+                summaryData = sumResponse
 
                 val expResponse = RetrofitClient.financeApi.getExpenses("Bearer $userToken", currentMonthIndex + 1, currentYear)
                 expensesData = expResponse.expenses
 
             } catch (e: Exception) {
                 android.util.Log.e("API_ERRO", "Falha ao buscar dados", e)
-                incomesData = emptyList()
+                summaryData = null
                 expensesData = emptyList()
             } finally {
                 isLoading = false
@@ -104,7 +95,13 @@ fun HomeScreen(onNavigate: (Int) -> Unit = {}) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
             )
         },
-        bottomBar = { StandardBottomBar(itemSelecionado = 0, onItemClick = onNavigate, onAddClick = { /* TODO */ }) }
+        bottomBar = {
+            StandardBottomBar(
+                itemSelecionado = 0,
+                onItemClick = onNavigate,
+                onAddClick = onAddClick
+            )
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp),
@@ -121,12 +118,7 @@ fun HomeScreen(onNavigate: (Int) -> Unit = {}) {
             item {
                 ResumoFinanceiroSection(
                     isLoading = isLoading,
-                    salario = salarioTotal,
-                    adiantamento = adiantamentoTotal,
-                    rendaExtra = rendaExtraTotal,
-                    restSalario = restanteSalario,
-                    restAdiant = restanteAdiantamento,
-                    totalDisp = totalGeralDisponivel
+                    data = summaryData
                 )
             }
             item {
@@ -135,7 +127,8 @@ fun HomeScreen(onNavigate: (Int) -> Unit = {}) {
                     expenses = filteredExpenses,
                     categoriesMap = categoriesMap,
                     onFilterClick = { showFilterModal = true },
-                    isFiltered = selectedCategoryId != null
+                    isFiltered = selectedCategoryId != null,
+                    onAddClick = onAddClick
                 )
             }
             item { Spacer(modifier = Modifier.height(16.dp)) }
