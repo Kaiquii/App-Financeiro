@@ -21,7 +21,12 @@ data class SummaryResponse(
     val total_income: Double
 )
 
-data class Category(val id: Int, val name: String)
+data class Category(
+    val id: Int,
+    val user_id: Int? = null,
+    val name: String
+)
+
 data class CategoriesResponse(val categories: List<Category>, val total: Int)
 
 data class Expense(
@@ -45,6 +50,29 @@ data class Income(
     val year: Int
 )
 data class IncomesResponse(val incomes: List<Income>, val total: Int)
+
+data class IncomeRequest(
+    val source: String,
+    val amount: Double,
+    val month: Int,
+    val year: Int,
+    val type: String
+)
+
+data class IncomeUpdateRequest(
+    val amount: Double? = null,
+    val update_future: Boolean? = null
+)
+
+data class CategoryRequest(
+    val name: String
+)
+
+data class CategoryResponse(
+    val data: Category,
+    val message: String
+)
+
 
 data class ExpenseRequest(
     val amount: Double,
@@ -70,6 +98,11 @@ data class ExpenseUpdateRequest(
     val update_future: Boolean? = null
 )
 
+data class UpdateProfileRequest(
+    val name: String,
+    val email: String
+)
+
 interface FinanceApi {
     @GET("api/reports/summary")
     suspend fun getSummary(
@@ -90,11 +123,11 @@ interface FinanceApi {
         @Query("year") year: Int
     ): ExpensesResponse
 
-    @GET("api/incomes")
+    @GET("api/incomes/")
     suspend fun getIncomes(
         @Header("Authorization") token: String,
-        @Query("month") month: Int,
-        @Query("year") year: Int
+        @Query("month") month: Int? = null,
+        @Query("year") year: Int? = null
     ): IncomesResponse
 
     @retrofit2.http.POST("api/expenses/")
@@ -122,4 +155,49 @@ interface FinanceApi {
         @retrofit2.http.Header("Authorization") token: String,
         @retrofit2.http.Path("id") id: Int
     ): Expense
+
+    @retrofit2.http.POST("api/incomes/")
+    suspend fun createIncome(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Body request: IncomeRequest
+    ): DefaultResponse
+
+    @retrofit2.http.PATCH("api/incomes/{id}")
+    suspend fun updateIncome(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Path("id") id: Int,
+        @retrofit2.http.Body request: IncomeUpdateRequest
+    ): DefaultResponse
+
+    @retrofit2.http.DELETE("api/incomes/{id}")
+    suspend fun deleteIncome(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Path("id") id: Int
+    ): DefaultResponse
+
+    @retrofit2.http.POST("api/categories/")
+    suspend fun createCategory(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Body request: CategoryRequest
+    ): CategoryResponse
+
+    @retrofit2.http.PATCH("api/categories/{id}")
+    suspend fun updateCategory(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Path("id") id: Int,
+        @retrofit2.http.Body request: CategoryRequest
+    ): DefaultResponse
+
+    @retrofit2.http.DELETE("api/categories/{id}")
+    suspend fun deleteCategory(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Path("id") id: Int
+    ): DefaultResponse
+
+    @retrofit2.http.PATCH("api/users/profile")
+    suspend fun updateProfile(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Body request: UpdateProfileRequest
+    ): DefaultResponse
+
 }

@@ -31,7 +31,10 @@ import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 @Composable
 fun PerfilScreen(
     onLogoutClick: () -> Unit = {},
-    onNavigate: (Int) -> Unit = {}
+    onNavigate: (Int) -> Unit = {},
+    onIncomeSettingsClick: () -> Unit = {},
+    onCategoriesClick: () -> Unit = {},
+    onEditProfileClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -116,7 +119,7 @@ fun PerfilScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
-                onClick = { /* Editar Perfil */ },
+                onClick = onEditProfileClick,
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryBlue),
                 border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.5f))
@@ -127,8 +130,21 @@ fun PerfilScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             SectionTitle("Configurações")
-            SettingsItem(icon = Icons.Default.AccountBalance, iconColor = PrimaryBlue, title = "Configurações de Renda", subtitle = "Salário, Adiantamento e Renda Extra")
-            SettingsItem(icon = Icons.Default.Lock, iconColor = PrimaryBlue, title = "Segurança e Privacidade", subtitle = "Edite a sua Senha, Biometria")
+            SettingsItem(
+                icon = Icons.Default.AccountBalance,
+                iconColor = PrimaryBlue,
+                title = "Configurações de Renda",
+                subtitle = "Salário, Adiantamento e Renda Extra",
+                onClick = onIncomeSettingsClick
+            )
+
+            SettingsItem(
+                icon = Icons.Default.Category,
+                iconColor = PrimaryBlue,
+                title = "Categorias",
+                subtitle = "Crie e edite suas categorias",
+                onClick = onCategoriesClick
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -167,7 +183,13 @@ private fun SectionTitle(title: String) {
 }
 
 @Composable
-private fun SettingsItem(icon: ImageVector, iconColor: Color, title: String, subtitle: String) {
+private fun SettingsItem(
+    icon: ImageVector,
+    iconColor: Color,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit = {}
+) {
     val cardBg = MaterialTheme.colorScheme.surface
     val textColor = MaterialTheme.colorScheme.onBackground
 
@@ -176,7 +198,7 @@ private fun SettingsItem(icon: ImageVector, iconColor: Color, title: String, sub
             .fillMaxWidth()
             .padding(bottom = 8.dp)
             .background(cardBg, RoundedCornerShape(12.dp))
-            .clickable { /* Ação */ }
+            .clickable { onClick() }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

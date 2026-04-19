@@ -22,6 +22,9 @@ import com.example.appfinanceiro.feature.login.LoginScreen
 import com.example.appfinanceiro.feature.perfil.PerfilScreen
 import com.example.appfinanceiro.feature.login.RegisterScreen
 import com.example.appfinanceiro.feature.login.EsqueciSenhaScreen
+import com.example.appfinanceiro.feature.perfil.CategoriasScreen
+import com.example.appfinanceiro.feature.perfil.ConfiguracoesRendaScreen
+import com.example.appfinanceiro.feature.perfil.EditarPerfilScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,12 +106,21 @@ class MainActivity : ComponentActivity() {
                                             popUpTo("home") { inclusive = true }
                                             launchSingleTop = true
                                         }
-                                        // 👇 ENSINA A IR PARA DESPESAS A PARTIR DO PERFIL
                                         1 -> navController.navigate("despesas") { launchSingleTop = true }
                                     }
+                                },
+                                onIncomeSettingsClick = {
+                                    navController.navigate("configuracoes_renda")
+                                },
+                                onCategoriesClick = {
+                                    navController.navigate("categorias")
+                                },
+                                onEditProfileClick = {
+                                    navController.navigate("editar_perfil")
                                 }
                             )
                         }
+
 
                         composable("nova_despesa") {
                             NovaDespesaScreen(
@@ -146,6 +158,24 @@ class MainActivity : ComponentActivity() {
                                     onNavigateBack = { navController.popBackStack() }
                                 )
                             }
+                        }
+
+                        composable("configuracoes_renda") {
+                            ConfiguracoesRendaScreen(
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable("categorias") {
+                            CategoriasScreen(
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable("editar_perfil") {
+                            EditarPerfilScreen(
+                                onNavigateBack = { navController.popBackStack() }
+                            )
                         }
                     }
                 }
