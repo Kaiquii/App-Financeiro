@@ -23,7 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 
 @Composable
@@ -39,36 +41,98 @@ fun StandardBottomBar(
         NavigationBar(containerColor = bgColor, contentColor = unselectedColor) {
             NavigationBarItem(
                 icon = { Icon(Icons.Default.Home, contentDescription = "Início") },
-                label = { Text("Início") },
+                label = {
+                    Text(
+                        text = "Início",
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 11.sp
+                    )
+                },
                 selected = itemSelecionado == 0,
                 onClick = { onItemClick(0) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedColor, unselectedTextColor = unselectedColor)
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = PrimaryBlue,
+                    selectedTextColor = PrimaryBlue,
+                    indicatorColor = Color.Transparent,
+                    unselectedIconColor = unselectedColor,
+                    unselectedTextColor = unselectedColor
+                )
             )
 
             NavigationBarItem(
                 icon = { Icon(Icons.Default.Receipt, contentDescription = "Despesas") },
-                label = { Text("Despesas") },
+                label = {
+                    Text(
+                        text = "Despesas",
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 11.sp
+                    )
+                },
                 selected = itemSelecionado == 1,
                 onClick = { onItemClick(1) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedColor, unselectedTextColor = unselectedColor)
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = PrimaryBlue,
+                    selectedTextColor = PrimaryBlue,
+                    indicatorColor = Color.Transparent,
+                    unselectedIconColor = unselectedColor,
+                    unselectedTextColor = unselectedColor
+                )
             )
 
-            NavigationBarItem(icon = { }, label = { }, selected = false, onClick = { }, enabled = false)
+            NavigationBarItem(
+                icon = { },
+                label = { },
+                selected = false,
+                onClick = { },
+                enabled = false
+            )
 
             NavigationBarItem(
-                icon = { Icon(Icons.Default.PieChart, contentDescription = "Relatórios") },
-                label = { Text("Relatórios") },
+                icon = { Icon(Icons.Default.PieChart, contentDescription = "Relatório") },
+                label = {
+                    Text(
+                        text = "Relatórios",
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 11.sp
+                    )
+                },
                 selected = itemSelecionado == 2,
                 onClick = { onItemClick(2) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedColor, unselectedTextColor = unselectedColor)
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = PrimaryBlue,
+                    selectedTextColor = PrimaryBlue,
+                    indicatorColor = Color.Transparent,
+                    unselectedIconColor = unselectedColor,
+                    unselectedTextColor = unselectedColor
+                )
             )
 
             NavigationBarItem(
                 icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                label = { Text("Perfil") },
+                label = {
+                    Text(
+                        text = "Perfil",
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 11.sp
+                    )
+                },
                 selected = itemSelecionado == 3,
                 onClick = { onItemClick(3) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = PrimaryBlue, selectedTextColor = PrimaryBlue, indicatorColor = Color.Transparent, unselectedIconColor = unselectedColor, unselectedTextColor = unselectedColor)
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = PrimaryBlue,
+                    selectedTextColor = PrimaryBlue,
+                    indicatorColor = Color.Transparent,
+                    unselectedIconColor = unselectedColor,
+                    unselectedTextColor = unselectedColor
+                )
             )
         }
 

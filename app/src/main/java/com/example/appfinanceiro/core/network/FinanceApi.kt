@@ -1,7 +1,9 @@
 package com.example.appfinanceiro.core.network
 
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 data class SummaryResponse(
@@ -169,10 +171,11 @@ interface FinanceApi {
         @retrofit2.http.Body request: IncomeUpdateRequest
     ): DefaultResponse
 
-    @retrofit2.http.DELETE("api/incomes/{id}")
+    @DELETE("api/incomes/{id}")
     suspend fun deleteIncome(
-        @retrofit2.http.Header("Authorization") token: String,
-        @retrofit2.http.Path("id") id: Int
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Query("delete_future") deleteFuture: Boolean? = null
     ): DefaultResponse
 
     @retrofit2.http.POST("api/categories/")

@@ -2,34 +2,66 @@ package com.example.appfinanceiro.feature.perfil
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextMuted
-import com.example.appfinanceiro.core.network.Category
-import com.example.appfinanceiro.core.network.CategoryRequest
 import com.example.appfinanceiro.core.network.Income
 import com.example.appfinanceiro.core.network.IncomeRequest
 import com.example.appfinanceiro.core.network.IncomeUpdateRequest
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
+import com.example.appfinanceiro.feature.home.components.MonthSelector
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -43,14 +75,18 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
     val textColor = MaterialTheme.colorScheme.onBackground
+    val dialogSurfaceColor = MaterialTheme.colorScheme.surface
+    val dialogTextColor = MaterialTheme.colorScheme.onSurface
+    val dialogSecondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     val calendar = remember { Calendar.getInstance() }
-    val currentMonth = calendar.get(Calendar.MONTH) + 1
-    val currentYear = calendar.get(Calendar.YEAR)
+    var selectedMonthIndex by remember { mutableIntStateOf(calendar.get(Calendar.MONTH)) }
+    var selectedYear by remember { mutableIntStateOf(calendar.get(Calendar.YEAR)) }
 
     var incomes by remember { mutableStateOf<List<Income>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var refreshTrigger by remember { mutableIntStateOf(0) }
+    var isDeleting by remember { mutableStateOf(false) }
 
     var salarioAmount by remember { mutableStateOf("") }
     var adiantamentoAmount by remember { mutableStateOf("") }
@@ -62,18 +98,16 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
 
     var incomeToDelete by remember { mutableStateOf<Income?>(null) }
     var incomeDeleteLabel by remember { mutableStateOf("") }
+    var deleteFutureSelected by remember { mutableStateOf(false) }
+
+    val selectedMonth = selectedMonthIndex + 1
 
     LaunchedEffect(userToken, refreshTrigger) {
         if (userToken != null) {
             isLoading = true
             try {
                 val incomesResponse = RetrofitClient.financeApi.getIncomes("Bearer $userToken")
-
                 incomes = incomesResponse.incomes
-
-                salarioAmount = currentIncome(incomes, "Salario", currentMonth, currentYear)?.amount?.toString()?.replace(".", ",") ?: ""
-                adiantamentoAmount = currentIncome(incomes, "Adiantamento", currentMonth, currentYear)?.amount?.toString()?.replace(".", ",") ?: ""
-                rendaExtraAmount = currentIncome(incomes, "Renda Extra", currentMonth, currentYear)?.amount?.toString()?.replace(".", ",") ?: ""
             } catch (e: Exception) {
                 Toast.makeText(context, "Erro ao carregar configurações", Toast.LENGTH_SHORT).show()
             } finally {
@@ -82,55 +116,118 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
         }
     }
 
-    val salarioAtual = currentIncome(incomes, "Salario", currentMonth, currentYear)
-    val adiantamentoAtual = currentIncome(incomes, "Adiantamento", currentMonth, currentYear)
-    val rendaExtraAtual = currentIncome(incomes, "Renda Extra", currentMonth, currentYear)
+    val salarioAtual = currentIncome(incomes, "Salario", selectedMonth, selectedYear)
+    val adiantamentoAtual = currentIncome(incomes, "Adiantamento", selectedMonth, selectedYear)
+    val rendaExtraAtual = currentIncome(incomes, "Renda Extra", selectedMonth, selectedYear)
+
+    LaunchedEffect(salarioAtual, adiantamentoAtual, rendaExtraAtual) {
+        salarioAmount = salarioAtual?.amount?.toString()?.replace(".", ",") ?: ""
+        adiantamentoAmount = adiantamentoAtual?.amount?.toString()?.replace(".", ",") ?: ""
+        rendaExtraAmount = rendaExtraAtual?.amount?.toString()?.replace(".", ",") ?: ""
+    }
 
     if (incomeToDelete != null) {
         AlertDialog(
-            onDismissRequest = { incomeToDelete = null },
-            containerColor = MaterialTheme.colorScheme.background,
+            onDismissRequest = {
+                if (!isDeleting) {
+                    incomeToDelete = null
+                    deleteFutureSelected = false
+                }
+            },
+            containerColor = dialogSurfaceColor,
             shape = RoundedCornerShape(24.dp),
             title = {
                 Text(
                     text = "Excluir renda",
-                    color = textColor,
+                    color = dialogTextColor,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
-                Text(
-                    text = "Tem certeza que deseja remover $incomeDeleteLabel?",
-                    color = textColor
-                )
+                Column {
+                    Text(
+                        text = "Tem certeza que deseja remover $incomeDeleteLabel?",
+                        color = dialogTextColor
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable {
+                            deleteFutureSelected = !deleteFutureSelected
+                        }
+                    ) {
+                        Checkbox(
+                            checked = deleteFutureSelected,
+                            onCheckedChange = { deleteFutureSelected = it },
+                            enabled = !isDeleting,
+                            colors = CheckboxDefaults.colors(checkedColor = PrimaryBlue)
+                        )
+                        Text(
+                            text = "Excluir esta e as próximas",
+                            color = dialogSecondaryTextColor,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
+                    enabled = !isDeleting,
                     onClick = {
                         val selectedIncome = incomeToDelete ?: return@TextButton
 
+                        isDeleting = true
                         coroutineScope.launch {
                             try {
-                                RetrofitClient.financeApi.deleteIncome(
-                                    "Bearer $userToken",
-                                    selectedIncome.id
+                                val response = RetrofitClient.financeApi.deleteIncome(
+                                    token = "Bearer $userToken",
+                                    id = selectedIncome.id,
+                                    deleteFuture = if (deleteFutureSelected) true else null
                                 )
-                                Toast.makeText(context, "$incomeDeleteLabel removido!", Toast.LENGTH_SHORT).show()
+
+                                Toast.makeText(
+                                    context,
+                                    response.message.ifBlank { "$incomeDeleteLabel removido!" },
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
                                 incomeToDelete = null
+                                deleteFutureSelected = false
                                 refreshTrigger++
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Erro ao remover $incomeDeleteLabel", Toast.LENGTH_SHORT).show()
-                                incomeToDelete = null
+                                Toast.makeText(
+                                    context,
+                                    "Erro ao remover $incomeDeleteLabel",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } finally {
+                                isDeleting = false
                             }
                         }
                     }
                 ) {
-                    Text("Sim", color = Color(0xFFFF7A7A), fontWeight = FontWeight.Medium)
+                    Text(
+                        "Confirmar",
+                        color = DangerRed,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { incomeToDelete = null }) {
-                    Text("Cancelar", color = PrimaryBlue, fontWeight = FontWeight.Medium)
+                TextButton(
+                    enabled = !isDeleting,
+                    onClick = {
+                        incomeToDelete = null
+                        deleteFutureSelected = false
+                    }
+                ) {
+                    Text(
+                        "Cancelar",
+                        color = PrimaryBlue,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         )
@@ -140,10 +237,20 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
         containerColor = backgroundColor,
         topBar = {
             TopAppBar(
-                title = { Text("Configurações de Renda", color = textColor, fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Configurações de Renda",
+                        color = textColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor)
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Voltar",
+                            tint = textColor
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
@@ -169,10 +276,40 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
                 item {
-                    Text("Rendas Fixas", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Referência atual: ${currentMonth.toString().padStart(2, '0')}/$currentYear",
+                        "Rendas Fixas",
+                        color = textColor,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    MonthSelector(
+                        monthIndex = selectedMonthIndex,
+                        currentYear = selectedYear,
+                        onPrevClick = {
+                            if (selectedMonthIndex == 0) {
+                                selectedMonthIndex = 11
+                                selectedYear--
+                            } else {
+                                selectedMonthIndex--
+                            }
+                        },
+                        onNextClick = {
+                            if (selectedMonthIndex == 11) {
+                                selectedMonthIndex = 0
+                                selectedYear++
+                            } else {
+                                selectedMonthIndex++
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        "Referência selecionada: ${selectedMonth.toString().padStart(2, '0')}/$selectedYear",
                         color = TextMuted,
                         fontSize = 13.sp
                     )
@@ -193,8 +330,8 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                                 amountText = salarioAmount,
                                 existingIncome = salarioAtual,
                                 updateFuture = salarioUpdateFuture,
-                                month = currentMonth,
-                                year = currentYear,
+                                month = selectedMonth,
+                                year = selectedYear,
                                 token = userToken,
                                 refresh = { refreshTrigger++ }
                             )
@@ -203,6 +340,7 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                             salarioAtual?.let {
                                 incomeToDelete = it
                                 incomeDeleteLabel = "o salário"
+                                deleteFutureSelected = false
                             }
                         },
                         surfaceColor = surfaceColor
@@ -224,8 +362,8 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                                 amountText = adiantamentoAmount,
                                 existingIncome = adiantamentoAtual,
                                 updateFuture = adiantamentoUpdateFuture,
-                                month = currentMonth,
-                                year = currentYear,
+                                month = selectedMonth,
+                                year = selectedYear,
                                 token = userToken,
                                 refresh = { refreshTrigger++ }
                             )
@@ -234,6 +372,7 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                             adiantamentoAtual?.let {
                                 incomeToDelete = it
                                 incomeDeleteLabel = "o adiantamento"
+                                deleteFutureSelected = false
                             }
                         },
                         surfaceColor = surfaceColor
@@ -255,8 +394,8 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                                 amountText = rendaExtraAmount,
                                 existingIncome = rendaExtraAtual,
                                 updateFuture = rendaExtraUpdateFuture,
-                                month = currentMonth,
-                                year = currentYear,
+                                month = selectedMonth,
+                                year = selectedYear,
                                 token = userToken,
                                 refresh = { refreshTrigger++ }
                             )
@@ -265,6 +404,7 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                             rendaExtraAtual?.let {
                                 incomeToDelete = it
                                 incomeDeleteLabel = "a renda extra"
+                                deleteFutureSelected = false
                             }
                         },
                         surfaceColor = surfaceColor
@@ -275,7 +415,12 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
     }
 }
 
-private fun currentIncome(incomes: List<Income>, source: String, month: Int, year: Int): Income? {
+private fun currentIncome(
+    incomes: List<Income>,
+    source: String,
+    month: Int,
+    year: Int
+): Income? {
     return incomes.firstOrNull {
         it.source.equals(source, ignoreCase = true) &&
                 it.month == month &&
@@ -300,7 +445,7 @@ private fun saveIncome(
         return
     }
 
-    val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
+    val scope = CoroutineScope(Dispatchers.Main)
     scope.launch {
         try {
             if (existingIncome == null) {
@@ -343,7 +488,7 @@ private fun IncomeCard(
     onUpdateFutureChange: (Boolean) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
-    surfaceColor: Color
+    surfaceColor: androidx.compose.ui.graphics.Color
 ) {
     Column(
         modifier = Modifier
@@ -352,7 +497,11 @@ private fun IncomeCard(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text(
+            text = title,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
 
         OutlinedTextField(
             value = amount,
@@ -373,7 +522,11 @@ private fun IncomeCard(
                     checked = updateFuture,
                     onCheckedChange = onUpdateFutureChange
                 )
-                Text("Atualizar este e os próximos meses", fontSize = 13.sp, color = TextMuted)
+                Text(
+                    "Atualizar este e os próximos meses",
+                    fontSize = 13.sp,
+                    color = TextMuted
+                )
             }
         }
 
