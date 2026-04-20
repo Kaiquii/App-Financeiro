@@ -2,7 +2,15 @@ package com.example.appfinanceiro.feature.despesas
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,11 +19,35 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,11 +56,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
-import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 import com.example.appfinanceiro.core.network.Category
-import com.example.appfinanceiro.core.network.auth.RetrofitClient
 import com.example.appfinanceiro.core.network.ExpenseUpdateRequest
-import com.example.appfinanceiro.feature.despesas.components.*
+import com.example.appfinanceiro.core.network.auth.RetrofitClient
+import com.example.appfinanceiro.feature.despesas.components.CustomDropdown
+import com.example.appfinanceiro.feature.despesas.components.CustomInput
+import com.example.appfinanceiro.feature.despesas.components.ExpenseValueInput
+import com.example.appfinanceiro.feature.despesas.components.FormLabel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -41,9 +75,10 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val userToken by remember { SessionManager(context) }.token.collectAsState(initial = null)
+    val colorScheme = MaterialTheme.colorScheme
 
-    val backgroundColor = MaterialTheme.colorScheme.background
-    val inputBgColor = Color(0xFF1E232D)
+    val backgroundColor = colorScheme.background
+    val inputBgColor = colorScheme.surface
 
     var amountText by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -95,7 +130,6 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                 } catch (e: Exception) {
                     android.util.Log.e("API_DATE", "Erro ao converter a data", e)
                 }
-
             } catch (e: Exception) {
                 Toast.makeText(context, "Erro ao carregar despesa", Toast.LENGTH_SHORT).show()
                 onNavigateBack()
@@ -109,60 +143,131 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val selectedCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = millis }
-                        calendar.set(selectedCal.get(Calendar.YEAR), selectedCal.get(Calendar.MONTH), selectedCal.get(Calendar.DAY_OF_MONTH))
-                        dateText = displayFormat.format(calendar.time)
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val selectedCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                                timeInMillis = millis
+                            }
+                            calendar.set(
+                                selectedCal.get(Calendar.YEAR),
+                                selectedCal.get(Calendar.MONTH),
+                                selectedCal.get(Calendar.DAY_OF_MONTH)
+                            )
+                            dateText = displayFormat.format(calendar.time)
+                        }
+                        showDatePicker = false
                     }
-                    showDatePicker = false
-                }) { Text("OK", color = PrimaryBlue) }
+                ) {
+                    Text("OK", color = PrimaryBlue)
+                }
             },
-            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar", color = TextMuted) } }
-        ) { DatePicker(state = datePickerState) }
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar", color = colorScheme.onSurfaceVariant)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     Scaffold(
         containerColor = backgroundColor,
         topBar = {
             TopAppBar(
-                title = { Text("Editar Despesa", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White) } },
-                actions = { Spacer(modifier = Modifier.width(48.dp)) },
+                title = {
+                    Text(
+                        "Editar Despesa",
+                        color = colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Fechar",
+                            tint = colorScheme.onBackground
+                        )
+                    }
+                },
+                actions = {
+                    Spacer(modifier = Modifier.height(48.dp))
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
             )
         }
     ) { paddingValues ->
         if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PrimaryBlue) }
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = PrimaryBlue)
+            }
         } else {
             Column(
-                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 24.dp).verticalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                ExpenseValueInput(amountText = amountText, onAmountChange = { amountText = it })
+                ExpenseValueInput(
+                    amountText = amountText,
+                    onAmountChange = { amountText = it }
+                )
+
                 Spacer(modifier = Modifier.height(32.dp))
 
                 FormLabel("Descrição")
-                CustomInput(description, { description = it }, Icons.Default.Description, "Ex: Supermercado", inputBgColor)
+                CustomInput(
+                    value = description,
+                    onValueChange = { description = it },
+                    icon = Icons.Default.Description,
+                    placeholder = "Ex: Supermercado",
+                    bgColor = inputBgColor
+                )
 
-                CustomDropdown("Categoria", selectedCategory?.name ?: "Selecione", categories.map { it.name }, expandedCategory, { expandedCategory = it }) {
-                    selectedCategory = categories[it]; expandedCategory = false
+                CustomDropdown(
+                    label = "Categoria",
+                    selectedValue = selectedCategory?.name ?: "Selecione",
+                    options = categories.map { it.name },
+                    expanded = expandedCategory,
+                    onExpandedChange = { expandedCategory = it }
+                ) {
+                    selectedCategory = categories[it]
+                    expandedCategory = false
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                CustomDropdown("Origem do Pagamento", selectedSource, sources, expandedSource, { expandedSource = it }) {
-                    selectedSource = sources[it]; expandedSource = false
+                CustomDropdown(
+                    label = "Origem do Pagamento",
+                    selectedValue = selectedSource,
+                    options = sources,
+                    expanded = expandedSource,
+                    onExpandedChange = { expandedSource = it }
+                ) {
+                    selectedSource = sources[it]
+                    expandedSource = false
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
                 FormLabel("Data de Pagamento")
                 CustomInput(
                     value = dateText,
-                    onValueChange = { if (it.length <= 10 && it.all { char -> char.isDigit() || char == '/' }) dateText = it },
+                    onValueChange = {
+                        if (it.length <= 10 && it.all { char -> char.isDigit() || char == '/' }) {
+                            dateText = it
+                        }
+                    },
                     icon = null,
                     placeholder = "DD/MM/AAAA",
                     bgColor = inputBgColor,
@@ -182,14 +287,23 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Atualizar parcelas futuras?", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text("Aplica essa edição aos próximos meses", color = TextMuted, fontSize = 12.sp)
+                            Text(
+                                "Atualizar parcelas futuras?",
+                                color = colorScheme.onSurface,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Aplica essa edição aos próximos meses",
+                                color = colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp
+                            )
                         }
                         Switch(
                             checked = updateFuture,
                             onCheckedChange = { updateFuture = it },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
+                                checkedThumbColor = colorScheme.onPrimary,
                                 checkedTrackColor = PrimaryBlue
                             )
                         )
@@ -205,13 +319,12 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                     ) {
                         Text(
                             text = "Ao salvar, esta alteração será aplicada ao mês atual e aos próximos meses desta despesa fixa.",
-                            color = Color.White,
+                            color = colorScheme.onSurface,
                             fontSize = 14.sp,
                             modifier = Modifier.padding(16.dp)
                         )
                     }
                 }
-
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -256,7 +369,9 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                 ) {
@@ -264,20 +379,28 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                         "Salvar Alterações",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = colorScheme.onPrimary
                     )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
-
             }
 
             if (showFixedExpenseConfirmation) {
                 AlertDialog(
                     onDismissRequest = { if (!isLoading) showFixedExpenseConfirmation = false },
-                    title = { Text("Atualizar despesa fixa") },
+                    containerColor = colorScheme.surface,
+                    title = {
+                        Text(
+                            "Atualizar despesa fixa",
+                            color = colorScheme.onSurface
+                        )
+                    },
                     text = {
-                        Text("Esta alteração será aplicada ao mês atual e aos próximos meses desta despesa fixa.")
+                        Text(
+                            "Esta alteração será aplicada ao mês atual e aos próximos meses desta despesa fixa.",
+                            color = colorScheme.onSurfaceVariant
+                        )
                     },
                     confirmButton = {
                         TextButton(
@@ -287,7 +410,11 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                                 coroutineScope.launch {
                                     try {
                                         val finalAmount = amountText.replace(",", ".").toDoubleOrNull() ?: 0.0
-                                        val parsedDate = try { displayFormat.parse(dateText) ?: calendar.time } catch (e: Exception) { calendar.time }
+                                        val parsedDate = try {
+                                            displayFormat.parse(dateText) ?: calendar.time
+                                        } catch (e: Exception) {
+                                            calendar.time
+                                        }
 
                                         val request = ExpenseUpdateRequest(
                                             amount = finalAmount,
@@ -310,7 +437,11 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                             },
                             enabled = !isLoading
                         ) {
-                            Text("Confirmar", color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Confirmar",
+                                color = PrimaryBlue,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     },
                     dismissButton = {
@@ -318,12 +449,14 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                             onClick = { showFixedExpenseConfirmation = false },
                             enabled = !isLoading
                         ) {
-                            Text("Cancelar", color = TextMuted)
+                            Text(
+                                "Cancelar",
+                                color = colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 )
             }
         }
-
     }
 }

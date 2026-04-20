@@ -3,7 +3,18 @@ package com.example.appfinanceiro.feature.despesas
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -14,24 +25,49 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
+import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
-import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 import com.example.appfinanceiro.core.network.Expense
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
 import com.example.appfinanceiro.feature.home.components.MonthSelector
 import com.example.appfinanceiro.feature.home.utils.getCategoryIconAndColor
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -47,10 +83,14 @@ fun DespesasScreen(
     val coroutineScope = rememberCoroutineScope()
     val sessionManager = remember { SessionManager(context) }
     val userToken by sessionManager.token.collectAsState(initial = null)
+    val colorScheme = MaterialTheme.colorScheme
 
-    val backgroundColor = MaterialTheme.colorScheme.background
-    val inputBgColor = Color(0xFF1E232D)
-    val textColor = Color.White
+    val backgroundColor = colorScheme.background
+    val inputBgColor = colorScheme.surface
+    val filterBgColor = colorScheme.surfaceVariant
+    val textColor = colorScheme.onBackground
+    val surfaceTextColor = colorScheme.onSurface
+    val secondaryTextColor = colorScheme.onSurfaceVariant
 
     var expensesData by remember { mutableStateOf<List<Expense>>(emptyList()) }
     var categoriesMap by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
@@ -74,7 +114,11 @@ fun DespesasScreen(
                 val catResponse = RetrofitClient.financeApi.getCategories("Bearer $userToken")
                 categoriesMap = catResponse.categories.associate { it.id to it.name }
 
-                val expResponse = RetrofitClient.financeApi.getExpenses("Bearer $userToken", currentMonthIndex + 1, currentYear)
+                val expResponse = RetrofitClient.financeApi.getExpenses(
+                    "Bearer $userToken",
+                    currentMonthIndex + 1,
+                    currentYear
+                )
                 expensesData = expResponse.expenses
             } catch (e: Exception) {
                 expensesData = emptyList()
@@ -88,7 +132,7 @@ fun DespesasScreen(
         val matchesSearch = expense.description.contains(searchQuery, ignoreCase = true)
         val matchesType = when (selectedFilter) {
             "Parceladas" -> expense.type.equals("Parcelada", ignoreCase = true)
-            "Únicas" -> expense.type.equals("Única", ignoreCase = true)
+            "Únicas" -> expense.type.equals("Única", ignoreCase = true) || expense.type.equals("Unica", ignoreCase = true)
             "Fixas" -> expense.type.equals("Fixa", ignoreCase = true)
             else -> true
         }
@@ -100,48 +144,94 @@ fun DespesasScreen(
         containerColor = backgroundColor,
         topBar = {
             TopAppBar(
-                title = { Text("Despesas Mensais", color = textColor, fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Despesas Mensais",
+                        color = textColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { onNavigate(0) }) { Icon(Icons.Default.ArrowBack, tint = textColor, contentDescription = "Voltar") }
+                    IconButton(onClick = { onNavigate(0) }) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            tint = textColor,
+                            contentDescription = "Voltar"
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
             )
         },
         bottomBar = {
-            StandardBottomBar(itemSelecionado = 1, onItemClick = onNavigate, onAddClick = onAddClick)
+            StandardBottomBar(
+                itemSelecionado = 1,
+                onItemClick = onNavigate,
+                onAddClick = onAddClick
+            )
         }
     ) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Buscar despesa...", color = TextMuted) },
-                leadingIcon = { Icon(Icons.Default.Search, tint = TextMuted, contentDescription = null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = {
+                    Text("Buscar despesa...", color = secondaryTextColor)
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        tint = secondaryTextColor,
+                        contentDescription = null
+                    )
+                },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = inputBgColor,
                     unfocusedContainerColor = inputBgColor,
-                    focusedTextColor = textColor,
-                    unfocusedTextColor = textColor,
+                    disabledContainerColor = inputBgColor,
+                    focusedTextColor = surfaceTextColor,
+                    unfocusedTextColor = surfaceTextColor,
+                    cursorColor = PrimaryBlue,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedPlaceholderColor = secondaryTextColor,
+                    unfocusedPlaceholderColor = secondaryTextColor,
+                    focusedLeadingIconColor = secondaryTextColor,
+                    unfocusedLeadingIconColor = secondaryTextColor
                 ),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true
             )
 
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 listOf("Todas", "Parceladas", "Únicas", "Fixas").forEach { filter ->
-                val isSelected = selectedFilter == filter
+                    val isSelected = selectedFilter == filter
                     Box(
                         modifier = Modifier
-                            .background(if (isSelected) PrimaryBlue else inputBgColor, RoundedCornerShape(20.dp))
+                            .background(
+                                if (isSelected) PrimaryBlue else filterBgColor,
+                                RoundedCornerShape(20.dp)
+                            )
                             .clickable { selectedFilter = filter }
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text(filter, color = if (isSelected) Color.White else TextMuted, fontSize = 14.sp)
+                        Text(
+                            text = filter,
+                            color = if (isSelected) Color.White else secondaryTextColor,
+                            fontSize = 14.sp
+                        )
                     }
                 }
             }
@@ -150,19 +240,42 @@ fun DespesasScreen(
                 monthIndex = currentMonthIndex,
                 currentYear = currentYear,
                 onPrevClick = {
-                    if (currentMonthIndex == 0) { currentMonthIndex = 11; currentYear-- } else currentMonthIndex--
+                    if (currentMonthIndex == 0) {
+                        currentMonthIndex = 11
+                        currentYear--
+                    } else {
+                        currentMonthIndex--
+                    }
                 },
                 onNextClick = {
-                    if (currentMonthIndex == 11) { currentMonthIndex = 0; currentYear++ } else currentMonthIndex++
+                    if (currentMonthIndex == 11) {
+                        currentMonthIndex = 0
+                        currentYear++
+                    } else {
+                        currentMonthIndex++
+                    }
                 }
             )
 
             if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PrimaryBlue) }
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = PrimaryBlue)
+                }
             } else if (filteredExpenses.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Nenhuma despesa encontrada.", color = TextMuted) }
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Nenhuma despesa encontrada.", color = secondaryTextColor)
+                }
             } else {
-                LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     items(filteredExpenses) { expense ->
                         DespesaListItem(
                             expense = expense,
@@ -177,26 +290,37 @@ fun DespesasScreen(
     }
 
     if (expenseToDelete != null) {
-        val isInstallmentExpense = expenseToDelete?.type?.equals("Parcelada", ignoreCase = true) == true
-        val isFixedExpense = expenseToDelete?.type?.equals("Fixa", ignoreCase = true) == true
+        val isInstallmentExpense =
+            expenseToDelete?.type?.equals("Parcelada", ignoreCase = true) == true
+        val isFixedExpense =
+            expenseToDelete?.type?.equals("Fixa", ignoreCase = true) == true
 
         var deleteFutureSelected by remember { mutableStateOf(false) }
 
         AlertDialog(
             onDismissRequest = { if (!isDeleting) expenseToDelete = null },
-            containerColor = com.example.appfinanceiro.core.designsystem.theme.BackgroundDark,
+            containerColor = backgroundColor,
+            titleContentColor = textColor,
+            textContentColor = textColor,
             title = {
-                Text("Excluir Despesa", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    "Excluir Despesa",
+                    color = textColor,
+                    fontWeight = FontWeight.Bold
+                )
             },
             text = {
                 Column {
-                    Text("Tem certeza que deseja excluir '${expenseToDelete?.description}'?", color = Color.White)
+                    Text(
+                        "Tem certeza que deseja excluir '${expenseToDelete?.description}'?",
+                        color = textColor
+                    )
 
                     if (isFixedExpense) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             "Esta exclusão removerá esta despesa no mês atual e também nos próximos meses.",
-                            color = Color.White,
+                            color = secondaryTextColor,
                             fontSize = 14.sp
                         )
                     } else if (isInstallmentExpense) {
@@ -208,43 +332,35 @@ fun DespesasScreen(
                             Checkbox(
                                 checked = deleteFutureSelected,
                                 onCheckedChange = { deleteFutureSelected = it },
-                                colors = CheckboxDefaults.colors(checkedColor = PrimaryBlue)
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = PrimaryBlue,
+                                    uncheckedColor = secondaryTextColor,
+                                    checkmarkColor = Color.White
+                                )
                             )
-                            Text("Excluir esta e todas as futuras", color = Color.White, fontSize = 14.sp)
+                            Text(
+                                "Excluir esta e todas as futuras",
+                                color = textColor,
+                                fontSize = 14.sp
+                            )
                         }
                     }
-
                 }
             },
             confirmButton = {
                 TextButton(
-                    onClick = {
-                        isDeleting = true
-                        coroutineScope.launch {
-                            try {
-                                RetrofitClient.financeApi.deleteExpense(
-                                    token = "Bearer $userToken",
-                                    id = expenseToDelete!!.id,
-                                    deleteFuture = if (isInstallmentExpense && deleteFutureSelected) true else null
-                                )
-                                Toast.makeText(context, "Excluído com sucesso!", Toast.LENGTH_SHORT).show()
-                                expenseToDelete = null
-                                refreshTrigger++
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Erro ao excluir", Toast.LENGTH_SHORT).show()
-                            } finally {
-                                isDeleting = false
-                            }
-                        }
-                    },
+                    onClick = { /* ... */ },
                     enabled = !isDeleting
                 ) {
-                    Text("Confirmar", color = com.example.appfinanceiro.core.designsystem.theme.DangerRed, fontWeight = FontWeight.Bold)
+                    Text("Confirmar", color = DangerRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { expenseToDelete = null }, enabled = !isDeleting) {
-                    Text("Cancelar", color = com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue, fontWeight = FontWeight.Bold)
+                TextButton(
+                    onClick = { expenseToDelete = null },
+                    enabled = !isDeleting
+                ) {
+                    Text("Cancelar", color = PrimaryBlue, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -252,29 +368,41 @@ fun DespesasScreen(
 }
 
 @Composable
-fun DespesaListItem(expense: Expense, categoriesMap: Map<Int, String>, onEdit: () -> Unit, onDelete: () -> Unit) {
+fun DespesaListItem(
+    expense: Expense,
+    categoriesMap: Map<Int, String>,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
     val dateFormat = remember { SimpleDateFormat("dd/MM", Locale("pt", "BR")) }
     val formattedDate = try {
         val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
         val date = parser.parse(expense.date)
         if (date != null) dateFormat.format(date) else "00/00"
-    } catch (e: Exception) { "00/00" }
+    } catch (e: Exception) {
+        "00/00"
+    }
 
     val typeLabel = when {
-        expense.type.equals("Parcelada", ignoreCase = true) -> "Parc. ${expense.current_installment}/${expense.installments}"
+        expense.type.equals("Parcelada", ignoreCase = true) ->
+            "Parc. ${expense.current_installment}/${expense.installments}"
+
         expense.type.equals("Fixa", ignoreCase = true) -> "Fixa"
         else -> "Única"
     }
 
-
-    val formatter = java.text.NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
+    val formatter = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
     val formattedAmount = formatter.format(expense.amount)
 
     val categoryName = categoriesMap[expense.category_id] ?: "Outros"
     val paymentSource = expense.payment_source ?: "Salário"
     val (icon, color) = getCategoryIconAndColor(categoryName)
 
-    val cardBg = Color(0xFF1E232D)
+    val cardBg = colorScheme.surface
+    val chipBg = colorScheme.surfaceVariant
+    val titleColor = colorScheme.onSurface
+    val secondaryColor = colorScheme.onSurfaceVariant
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -288,10 +416,15 @@ fun DespesaListItem(expense: Expense, categoriesMap: Map<Int, String>, onEdit: (
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(color.copy(alpha = 0.1f), CircleShape),
+                    .background(color.copy(alpha = 0.12f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -299,15 +432,15 @@ fun DespesaListItem(expense: Expense, categoriesMap: Map<Int, String>, onEdit: (
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = expense.description,
-                    color = Color.White,
+                    color = titleColor,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = categoryName,
-                    color = TextMuted,
+                    color = secondaryColor,
                     fontSize = 13.sp
                 )
 
@@ -316,12 +449,21 @@ fun DespesaListItem(expense: Expense, categoriesMap: Map<Int, String>, onEdit: (
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .background(Color(0xFF2D333E), RoundedCornerShape(6.dp))
+                            .background(chipBg, RoundedCornerShape(6.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Text(typeLabel, color = TextMuted, fontSize = 11.sp)
+                        Text(
+                            text = typeLabel,
+                            color = secondaryColor,
+                            fontSize = 11.sp
+                        )
                     }
-                    Text(" • $formattedDate", color = TextMuted, fontSize = 12.sp, modifier = Modifier.padding(start = 8.dp))
+                    Text(
+                        text = " • $formattedDate",
+                        color = secondaryColor,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 }
             }
 
@@ -341,7 +483,7 @@ fun DespesaListItem(expense: Expense, categoriesMap: Map<Int, String>, onEdit: (
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Deletar",
-                        tint = Color(0xFFFF4D4D),
+                        tint = DangerRed,
                         modifier = Modifier
                             .size(18.dp)
                             .clickable { onDelete() }
@@ -352,7 +494,7 @@ fun DespesaListItem(expense: Expense, categoriesMap: Map<Int, String>, onEdit: (
 
                 Text(
                     text = "- $formattedAmount",
-                    color = Color.White,
+                    color = titleColor,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -367,7 +509,11 @@ fun DespesaListItem(expense: Expense, categoriesMap: Map<Int, String>, onEdit: (
                         modifier = Modifier.size(12.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(paymentSource, color = TextMuted, fontSize = 12.sp)
+                    Text(
+                        text = paymentSource,
+                        color = secondaryColor,
+                        fontSize = 12.sp
+                    )
                 }
             }
         }
