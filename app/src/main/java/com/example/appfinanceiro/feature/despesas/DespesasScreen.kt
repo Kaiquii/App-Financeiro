@@ -62,6 +62,7 @@ import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
+import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 import com.example.appfinanceiro.core.network.Expense
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
 import com.example.appfinanceiro.feature.home.components.MonthSelector
@@ -210,6 +211,8 @@ fun DespesasScreen(
                 singleLine = true
             )
 
+            val filterChipBg = TextMuted.copy(alpha = 0.2f)
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -221,7 +224,7 @@ fun DespesasScreen(
                     Box(
                         modifier = Modifier
                             .background(
-                                if (isSelected) PrimaryBlue else filterBgColor,
+                                if (isSelected) PrimaryBlue else filterChipBg,
                                 RoundedCornerShape(20.dp)
                             )
                             .clickable { selectedFilter = filter }
@@ -229,7 +232,7 @@ fun DespesasScreen(
                     ) {
                         Text(
                             text = filter,
-                            color = if (isSelected) Color.White else secondaryTextColor,
+                            color = if (isSelected) Color.White else TextMuted,
                             fontSize = 14.sp
                         )
                     }
@@ -446,16 +449,18 @@ fun DespesaListItem(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                val typeChipBg = TextMuted.copy(alpha = 0.2f)
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .background(chipBg, RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .background(typeChipBg, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = typeLabel,
-                            color = secondaryColor,
-                            fontSize = 11.sp
+                            color = TextMuted,
+                            fontSize = 10.sp
                         )
                     }
                     Text(
