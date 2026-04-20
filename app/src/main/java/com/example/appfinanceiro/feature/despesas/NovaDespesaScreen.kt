@@ -1,6 +1,7 @@
 package com.example.appfinanceiro.feature.despesas
 
 import android.widget.Toast
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,9 +23,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.designsystem.theme.BackgroundDark
+import com.example.appfinanceiro.core.designsystem.theme.BackgroundLight
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 import com.example.appfinanceiro.core.network.Category
+import com.example.appfinanceiro.core.network.CategoryRequest
 import com.example.appfinanceiro.core.network.ExpenseRequest
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
 import com.example.appfinanceiro.feature.despesas.components.*
@@ -66,6 +70,14 @@ fun NovaDespesaScreen(onNavigateBack: () -> Unit) {
     var installments by remember { mutableIntStateOf(1) }
     var isLoading by remember { mutableStateOf(false) }
 
+    val isDark = isSystemInDarkTheme()
+    val dialogBackgroundColor = if (isDark) BackgroundDark else BackgroundLight
+    val dialogTextColor = if (isDark) Color.White else Color.Black
+
+    var showCreateCategoryDialog by remember { mutableStateOf(false) }
+    var newCategoryName by remember { mutableStateOf("") }
+    var isCreatingCategory by remember { mutableStateOf(false) }
+
     LaunchedEffect(userToken) {
         if (userToken != null) {
             try {
@@ -73,6 +85,101 @@ fun NovaDespesaScreen(onNavigateBack: () -> Unit) {
                 if (categories.isNotEmpty()) selectedCategory = categories[0]
             } catch (e: Exception) { }
         }
+    }
+
+    if (showCreateCategoryDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isCreatingCategory) {
+                    showCreateCategoryDialog = false
+                    newCategoryName = ""
+                }
+            },
+            containerColor = dialogBackgroundColor,
+            titleContentColor = dialogTextColor,
+            textContentColor = dialogTextColor,
+            title = {
+                Text(
+                    text = "Criar categoria",
+                    color = dialogTextColor,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Digite o nome da nova categoria.",
+                        color = dialogTextColor
+                    )
+
+                    OutlinedTextField(
+                        value = newCategoryName,
+                        onValueChange = { newCategoryName = it },
+                        label = { Text("Nome da categoria") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !isCreatingCategory,
+                    onClick = {
+                        val categoryName = newCategoryName.trim()
+                        if (categoryName.isEmpty()) {
+                            Toast.makeText(
+                                context,
+                                "Digite um nome para a categoria",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@TextButton
+                        }
+
+                        isCreatingCategory = true
+                        coroutineScope.launch {
+                            try {
+                                val response = RetrofitClient.financeApi.createCategory(
+                                    "Bearer $userToken",
+                                    CategoryRequest(name = categoryName)
+                                )
+
+                                categories = categories + response.data
+                                selectedCategory = response.data
+                                showCreateCategoryDialog = false
+                                newCategoryName = ""
+
+                                Toast.makeText(
+                                    context,
+                                    "Categoria criada com sucesso!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(
+                                    context,
+                                    "Erro ao criar categoria",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } finally {
+                                isCreatingCategory = false
+                            }
+                        }
+                    }
+                ) {
+                    Text("Salvar", color = PrimaryBlue)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !isCreatingCategory,
+                    onClick = {
+                        showCreateCategoryDialog = false
+                        newCategoryName = ""
+                    }
+                ) {
+                    Text("Cancelar", color = TextMuted)
+                }
+            }
+        )
     }
 
     if (showDatePicker) {
@@ -115,14 +222,31 @@ fun NovaDespesaScreen(onNavigateBack: () -> Unit) {
             FormLabel("Descrição")
             CustomInput(description, { description = it }, Icons.Default.Description, "Ex: Supermercado", inputBgColor)
 
-            CustomDropdown(
-                label = "Categoria",
+            CategoryDropdown(
                 selectedValue = selectedCategory?.name ?: "Selecione",
                 options = categories.map { it.name },
                 expanded = expandedCategory,
-                onExpandedChange = { expandedCategory = it },
-                onSelect = { index -> selectedCategory = categories[index]; expandedCategory = false }
+                onExpandedChange = { shouldExpand ->
+                    if (categories.isEmpty()) {
+                        expandedCategory = false
+                        Toast.makeText(
+                            context,
+                            "Não tem categoria criada, crie uma por favor no botão de +",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        expandedCategory = shouldExpand
+                    }
+                },
+                onSelect = { index ->
+                    selectedCategory = categories[index]
+                    expandedCategory = false
+                },
+                onAddCategoryClick = {
+                    showCreateCategoryDialog = true
+                }
             )
+
 
             CustomDropdown(
                 label = "Origem do Pagamento",

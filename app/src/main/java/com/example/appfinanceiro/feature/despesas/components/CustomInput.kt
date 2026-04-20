@@ -26,7 +26,8 @@ fun CustomInput(
     trailingIcon: ImageVector? = null,
     onTrailingIconClick: (() -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trailingContent: (@Composable (() -> Unit))? = null
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val secondaryColor = colorScheme.onSurfaceVariant
@@ -37,18 +38,20 @@ fun CustomInput(
         null
     }
 
-    val trailing: (@Composable () -> Unit)? = if (trailingIcon != null) {
-        {
-            if (onTrailingIconClick != null) {
-                IconButton(onClick = onTrailingIconClick) {
+    val trailing: (@Composable () -> Unit)? = when {
+        trailingContent != null -> trailingContent
+        trailingIcon != null -> {
+            {
+                if (onTrailingIconClick != null) {
+                    IconButton(onClick = onTrailingIconClick) {
+                        Icon(trailingIcon, contentDescription = null, tint = secondaryColor)
+                    }
+                } else {
                     Icon(trailingIcon, contentDescription = null, tint = secondaryColor)
                 }
-            } else {
-                Icon(trailingIcon, contentDescription = null, tint = secondaryColor)
             }
         }
-    } else {
-        null
+        else -> null
     }
 
     TextField(
