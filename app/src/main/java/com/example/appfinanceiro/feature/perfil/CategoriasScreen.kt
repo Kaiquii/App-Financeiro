@@ -2,6 +2,7 @@ package com.example.appfinanceiro.feature.perfil
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.designsystem.theme.BackgroundDark
+import com.example.appfinanceiro.core.designsystem.theme.BackgroundLight
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.network.Category
 import com.example.appfinanceiro.core.network.CategoryRequest
@@ -65,15 +68,42 @@ fun CategoriasScreen(onNavigateBack: () -> Unit) {
     }
 
     if (editingCategory != null) {
+        val isDark = isSystemInDarkTheme()
+        val dialogBackgroundColor = if (isDark) BackgroundDark else BackgroundLight
+        val dialogTextColor = if (isDark) Color.White else Color.Black
+        val dialogSecondaryTextColor =
+            if (isDark) Color.White.copy(alpha = 0.8f) else Color.Black.copy(alpha = 0.8f)
+
         AlertDialog(
             onDismissRequest = { editingCategory = null },
-            title = { Text("Editar categoria") },
+            containerColor = dialogBackgroundColor,
+            shape = RoundedCornerShape(24.dp),
+            title = {
+                Text(
+                    text = "Editar categoria",
+                    color = dialogTextColor,
+                    fontWeight = FontWeight.Bold
+                )
+            },
             text = {
                 OutlinedTextField(
                     value = editingCategoryName,
                     onValueChange = { editingCategoryName = it },
-                    label = { Text("Nome da categoria") },
-                    singleLine = true
+                    label = {
+                        Text(
+                            "Nome da categoria",
+                            color = dialogSecondaryTextColor
+                        )
+                    },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = dialogTextColor,
+                        unfocusedTextColor = dialogTextColor,
+                        focusedLabelColor = dialogSecondaryTextColor,
+                        unfocusedLabelColor = dialogSecondaryTextColor,
+                        focusedBorderColor = dialogSecondaryTextColor,
+                        unfocusedBorderColor = dialogSecondaryTextColor
+                    )
                 )
             },
             confirmButton = {
@@ -97,16 +127,17 @@ fun CategoriasScreen(onNavigateBack: () -> Unit) {
                         }
                     }
                 ) {
-                    Text("Salvar")
+                    Text("Salvar", color = PrimaryBlue, fontWeight = FontWeight.Medium)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { editingCategory = null }) {
-                    Text("Cancelar")
+                    Text("Cancelar", color = PrimaryBlue, fontWeight = FontWeight.Medium)
                 }
             }
         )
     }
+
 
     if (categoryToDelete != null) {
         AlertDialog(
