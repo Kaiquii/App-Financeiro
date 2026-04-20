@@ -1,0 +1,126 @@
+package com.example.appfinanceiro.feature.home.components.income
+
+import android.widget.Toast
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.appfinanceiro.core.designsystem.theme.BackgroundDark
+import com.example.appfinanceiro.core.designsystem.theme.BackgroundLight
+import com.example.appfinanceiro.core.designsystem.theme.DangerRed
+import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
+import com.example.appfinanceiro.core.network.Income
+import com.example.appfinanceiro.core.network.auth.RetrofitClient
+import kotlinx.coroutines.launch
+
+data class IncomeDeleteState(
+    val income: Income,
+    val label: String
+)
+
+@Composable
+fun IncomeDeleteDialog(
+    state: IncomeDeleteState,
+    token: String?,
+    onDismiss: () -> Unit,
+    onSuccess: () -> Unit
+) {
+    val isDark = isSystemInDarkTheme()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    val dialogBackgroundColor = if (isDark) BackgroundDark else BackgroundLight
+    val dialogTextColor = if (isDark) Color.White else Color.Black
+    val dialogSecondaryTextColor =
+        if (isDark) Color.White.copy(alpha = 0.8f) else Color.Black.copy(alpha = 0.8f)
+
+    var deleteFuture by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = dialogBackgroundColor,
+        titleContentColor = dialogTextColor,
+        textContentColor = dialogTextColor,
+        title = {
+            Text(
+                text = "Excluir renda",
+                color = dialogTextColor,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Tem certeza que deseja remover ${state.label}?",
+                    color = dialogTextColor
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = deleteFuture,
+                        onCheckedChange = { deleteFuture = it },
+                        colors = CheckboxDefaults.colors(checkedColor = PrimaryBlue)
+                    )
+                    Text(
+                        text = "Excluir esta e as próximas",
+                        color = dialogSecondaryTextColor,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            RetrofitClient.financeApi.deleteIncome(
+                                token = "Bearer $token",
+                                id = state.income.id,
+                                deleteFuture = if (deleteFuture) true else null
+                            )
+
+                            Toast.makeText(
+                                context,
+                                "${state.label} removido!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            onSuccess()
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Erro ao remover ${state.label}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
+            ) {
+                Text("Excluir", color = DangerRed)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = PrimaryBlue)
+            }
+        }
+    )
+}

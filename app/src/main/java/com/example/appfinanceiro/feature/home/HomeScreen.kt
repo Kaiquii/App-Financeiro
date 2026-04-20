@@ -38,6 +38,7 @@ import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.components.ExitConfirmationDialog
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.network.Expense
+import com.example.appfinanceiro.core.network.Income
 import com.example.appfinanceiro.core.network.SummaryResponse
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
 import com.example.appfinanceiro.feature.home.components.DespesasSection
@@ -73,11 +74,35 @@ fun HomeScreen(
     var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
     var showExitDialog by remember { mutableStateOf(false) }
 
+    var incomesData by remember { mutableStateOf<List<Income>>(emptyList()) }
+    var refreshIncomeActions by remember { mutableIntStateOf(0) }
+
+
     val filteredExpenses = if (selectedCategoryId == null) {
         expensesData
     } else {
         expensesData.filter { it.category_id == selectedCategoryId }
     }
+
+    val salarioAtual = incomesData.firstOrNull {
+        (it.source.equals("Salario", ignoreCase = true) ||
+                it.source.equals("Salário", ignoreCase = true)) &&
+                it.month == currentMonthIndex + 1 &&
+                it.year == currentYear
+    }
+
+    val adiantamentoAtual = incomesData.firstOrNull {
+        it.source.equals("Adiantamento", ignoreCase = true) &&
+                it.month == currentMonthIndex + 1 &&
+                it.year == currentYear
+    }
+
+    val rendaExtraAtual = incomesData.firstOrNull {
+        it.source.equals("Renda Extra", ignoreCase = true) &&
+                it.month == currentMonthIndex + 1 &&
+                it.year == currentYear
+    }
+
 
     fun changeMonth(amount: Int) {
         val cal = Calendar.getInstance().apply {
@@ -89,7 +114,7 @@ fun HomeScreen(
         currentYear = cal.get(Calendar.YEAR)
     }
 
-    LaunchedEffect(currentMonthIndex, currentYear, userToken) {
+    LaunchedEffect(currentMonthIndex, currentYear, userToken, refreshIncomeActions) {
         if (userToken != null) {
             isLoading = true
             try {
@@ -107,6 +132,9 @@ fun HomeScreen(
                     currentMonthIndex + 1,
                     currentYear
                 )
+
+                incomesData = incomesResponse.incomes
+
 
                 val salarioFromIncomes = incomesResponse.incomes
                     .filter {
@@ -134,6 +162,7 @@ fun HomeScreen(
                 android.util.Log.e("API_ERRO", "Falha ao buscar dados", e)
                 summaryData = null
                 expensesData = emptyList()
+                incomesData = emptyList()
             } finally {
                 isLoading = false
             }
@@ -189,8 +218,16 @@ fun HomeScreen(
             item {
                 ResumoFinanceiroSection(
                     isLoading = isLoading,
-                    data = summaryData
+                    data = summaryData,
+                    salarioIncome = salarioAtual,
+                    adiantamentoIncome = adiantamentoAtual,
+                    rendaExtraIncome = rendaExtraAtual,
+                    token = userToken,
+                    month = currentMonthIndex + 1,
+                    year = currentYear,
+                    onRefresh = { refreshIncomeActions++ }
                 )
+
             }
             item {
                 DespesasSection(
