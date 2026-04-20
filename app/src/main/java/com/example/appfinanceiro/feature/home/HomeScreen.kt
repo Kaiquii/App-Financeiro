@@ -1,24 +1,50 @@
 package com.example.appfinanceiro.feature.home
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.designsystem.components.ExitConfirmationDialog
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.network.Expense
 import com.example.appfinanceiro.core.network.SummaryResponse
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
+import com.example.appfinanceiro.feature.home.components.DespesasSection
 import com.example.appfinanceiro.feature.home.components.FilterOptionItem
 import com.example.appfinanceiro.feature.home.components.MonthSelector
-import com.example.appfinanceiro.feature.home.components.*
+import com.example.appfinanceiro.feature.home.components.ResumoFinanceiroSection
+import kotlinx.coroutines.launch
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,6 +56,7 @@ fun HomeScreen(
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     val sessionManager = remember { SessionManager(context) }
     val userToken by sessionManager.token.collectAsState(initial = null)
@@ -44,6 +71,7 @@ fun HomeScreen(
 
     var showFilterModal by remember { mutableStateOf(false) }
     var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
+    var showExitDialog by remember { mutableStateOf(false) }
 
     val filteredExpenses = if (selectedCategoryId == null) {
         expensesData
@@ -102,7 +130,6 @@ fun HomeScreen(
                     currentYear
                 )
                 expensesData = expResponse.expenses
-
             } catch (e: Exception) {
                 android.util.Log.e("API_ERRO", "Falha ao buscar dados", e)
                 summaryData = null
@@ -117,10 +144,20 @@ fun HomeScreen(
         containerColor = backgroundColor,
         topBar = {
             TopAppBar(
-                title = { Text("Visão Mensal", color = textColor, fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Visão Mensal",
+                        color = textColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { /* TODO: Voltar */ }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor)
+                    IconButton(onClick = { showExitDialog = true }) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Voltar",
+                            tint = textColor
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
@@ -165,7 +202,9 @@ fun HomeScreen(
                     onAddClick = onAddClick
                 )
             }
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 
@@ -208,5 +247,19 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    if (showExitDialog) {
+        ExitConfirmationDialog(
+            onConfirm = {
+                coroutineScope.launch {
+                    sessionManager.clearSession()
+                    showExitDialog = false
+                }
+            },
+            onDismiss = {
+                showExitDialog = false
+            }
+        )
     }
 }

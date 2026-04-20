@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DIALOG" />
-        <DropdownSelection timestamp="2026-04-20T13:06:52.828197400Z">
+        <DropdownSelection timestamp="2026-04-20T19:55:40.735100700Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=8835c8b7" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\kaiqu\.android\avd\Pixel_9a.avd" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,12 +15,12 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=RQCW402W72E" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\kaiqu\.android\avd\Pixel_9a.avd" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\kaiqu\.android\avd\Pixel_9a.avd" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=RQCW402W72E" />
               </handle>
             </Target>
           </targets>

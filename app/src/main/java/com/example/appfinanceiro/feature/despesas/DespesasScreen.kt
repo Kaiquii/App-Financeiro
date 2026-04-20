@@ -352,10 +352,40 @@ fun DespesasScreen(
             },
             confirmButton = {
                 TextButton(
-                    onClick = { /* ... */ },
+                    onClick = {
+                        isDeleting = true
+                        coroutineScope.launch {
+                            try {
+                                RetrofitClient.financeApi.deleteExpense(
+                                    token = "Bearer $userToken",
+                                    id = expenseToDelete!!.id,
+                                    deleteFuture = if (isInstallmentExpense && deleteFutureSelected) true else null
+                                )
+                                Toast.makeText(
+                                    context,
+                                    "Excluído com sucesso!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                expenseToDelete = null
+                                refreshTrigger++
+                            } catch (e: Exception) {
+                                Toast.makeText(
+                                    context,
+                                    "Erro ao excluir",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } finally {
+                                isDeleting = false
+                            }
+                        }
+                    },
                     enabled = !isDeleting
                 ) {
-                    Text("Confirmar", color = DangerRed, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Confirmar",
+                        color = DangerRed,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             },
             dismissButton = {
