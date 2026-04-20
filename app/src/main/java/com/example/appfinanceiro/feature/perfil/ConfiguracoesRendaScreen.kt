@@ -3,6 +3,7 @@ package com.example.appfinanceiro.feature.perfil
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +53,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.data.SessionManager
+import androidx.compose.ui.graphics.Color
+import com.example.appfinanceiro.core.designsystem.theme.BackgroundDark
+import com.example.appfinanceiro.core.designsystem.theme.BackgroundLight
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextMuted
@@ -75,9 +79,11 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
     val textColor = MaterialTheme.colorScheme.onBackground
-    val dialogSurfaceColor = MaterialTheme.colorScheme.surface
-    val dialogTextColor = MaterialTheme.colorScheme.onSurface
-    val dialogSecondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    val isDark = isSystemInDarkTheme()
+    val dialogSurfaceColor = if (isDark) BackgroundDark else BackgroundLight
+    val dialogTextColor = if (isDark) Color.White else Color.Black
+    val dialogSecondaryTextColor = if (isDark) Color.White.copy(alpha = 0.8f) else Color.Black.copy(alpha = 0.8f)
 
     val calendar = remember { Calendar.getInstance() }
     var selectedMonthIndex by remember { mutableIntStateOf(calendar.get(Calendar.MONTH)) }
