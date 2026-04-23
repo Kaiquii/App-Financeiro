@@ -1,4 +1,4 @@
-package com.example.appfinanceiro.feature.despesas
+package com.example.appfinanceiro.feature.despesas.components
 
 import android.widget.Toast
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -31,7 +31,6 @@ import com.example.appfinanceiro.core.network.Category
 import com.example.appfinanceiro.core.network.CategoryRequest
 import com.example.appfinanceiro.core.network.ExpenseRequest
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
-import com.example.appfinanceiro.feature.despesas.components.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar

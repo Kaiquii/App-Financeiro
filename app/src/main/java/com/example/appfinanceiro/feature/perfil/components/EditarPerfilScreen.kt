@@ -1,4 +1,4 @@
-package com.example.appfinanceiro.feature.perfil
+package com.example.appfinanceiro.feature.perfil.components
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*

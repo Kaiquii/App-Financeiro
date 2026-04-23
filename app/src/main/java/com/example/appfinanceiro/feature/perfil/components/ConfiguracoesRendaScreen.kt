@@ -1,5 +1,6 @@
-package com.example.appfinanceiro.feature.perfil
+package com.example.appfinanceiro.feature.perfil.components
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -435,7 +436,7 @@ private fun currentIncome(
 }
 
 private fun saveIncome(
-    context: android.content.Context,
+    context: Context,
     source: String,
     amountText: String,
     existingIncome: Income?,
@@ -494,7 +495,7 @@ private fun IncomeCard(
     onUpdateFutureChange: (Boolean) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
-    surfaceColor: androidx.compose.ui.graphics.Color
+    surfaceColor: Color
 ) {
     Column(
         modifier = Modifier

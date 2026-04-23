@@ -105,6 +105,25 @@ data class UpdateProfileRequest(
     val email: String
 )
 
+data class CategoryReportResponse(
+    val category_id: Int,
+    val category_name: String,
+    val total_amount: Double,
+    val percentage: Double
+)
+
+data class ChartReportResponse(
+    val month: Int,
+    val income: Double,
+    val expense: Double
+)
+
+data class YearlySummaryResponse(
+    val economia_total: Double,
+    val media_mensal: Double,
+    val year: Int
+)
+
 interface FinanceApi {
     @GET("api/reports/summary")
     suspend fun getSummary(
@@ -203,4 +222,22 @@ interface FinanceApi {
         @retrofit2.http.Body request: UpdateProfileRequest
     ): DefaultResponse
 
+    @GET("api/reports/categories")
+    suspend fun getReportCategories(
+        @Header("Authorization") token: String,
+        @Query("month") month: Int,
+        @Query("year") year: Int
+    ): List<CategoryReportResponse>
+
+    @GET("api/reports/chart")
+    suspend fun getReportChart(
+        @Header("Authorization") token: String,
+        @Query("year") year: Int
+    ): List<ChartReportResponse>
+
+    @GET("api/reports/yearly-summary")
+    suspend fun getYearlySummary(
+        @Header("Authorization") token: String,
+        @Query("year") year: Int
+    ): YearlySummaryResponse
 }

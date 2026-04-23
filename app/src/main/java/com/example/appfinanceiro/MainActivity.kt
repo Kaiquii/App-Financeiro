@@ -15,16 +15,17 @@ import androidx.navigation.compose.rememberNavController
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.theme.AppFinanceiroTheme
 import com.example.appfinanceiro.feature.despesas.DespesasScreen
-import com.example.appfinanceiro.feature.despesas.EditarDespesaScreen
-import com.example.appfinanceiro.feature.despesas.NovaDespesaScreen
+import com.example.appfinanceiro.feature.despesas.components.EditarDespesaScreen
+import com.example.appfinanceiro.feature.despesas.components.NovaDespesaScreen
 import com.example.appfinanceiro.feature.home.HomeScreen
 import com.example.appfinanceiro.feature.login.LoginScreen
 import com.example.appfinanceiro.feature.perfil.PerfilScreen
 import com.example.appfinanceiro.feature.login.RegisterScreen
 import com.example.appfinanceiro.feature.login.EsqueciSenhaScreen
-import com.example.appfinanceiro.feature.perfil.CategoriasScreen
-import com.example.appfinanceiro.feature.perfil.ConfiguracoesRendaScreen
-import com.example.appfinanceiro.feature.perfil.EditarPerfilScreen
+import com.example.appfinanceiro.feature.perfil.components.CategoriasScreen
+import com.example.appfinanceiro.feature.perfil.components.ConfiguracoesRendaScreen
+import com.example.appfinanceiro.feature.perfil.components.EditarPerfilScreen
+import com.example.appfinanceiro.feature.relatorios.RelatoriosScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
                                 onNavigate = { tabIndex ->
                                     when (tabIndex) {
                                         1 -> navController.navigate("despesas") { launchSingleTop = true }
+                                        2 -> navController.navigate("relatorios") { launchSingleTop = true }
                                         3 -> navController.navigate("perfil") { launchSingleTop = true }
                                     }
                                 },
@@ -107,6 +109,7 @@ class MainActivity : ComponentActivity() {
                                             launchSingleTop = true
                                         }
                                         1 -> navController.navigate("despesas") { launchSingleTop = true }
+                                        2 -> navController.navigate("relatorios") { launchSingleTop = true }
                                     }
                                 },
                                 onIncomeSettingsClick = {
@@ -138,6 +141,7 @@ class MainActivity : ComponentActivity() {
                                             popUpTo("home") { inclusive = true }
                                             launchSingleTop = true
                                         }
+                                        2 -> navController.navigate("relatorios") { launchSingleTop = true }
                                         3 -> navController.navigate("perfil") { launchSingleTop = true }
                                     }
                                 },
@@ -177,6 +181,25 @@ class MainActivity : ComponentActivity() {
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
+
+                        composable("relatorios") {
+                            RelatoriosScreen(
+                                onNavigate = { tabIndex ->
+                                    when (tabIndex) {
+                                        0 -> navController.navigate("home") {
+                                            popUpTo("home") { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                        1 -> navController.navigate("despesas") { launchSingleTop = true }
+                                        3 -> navController.navigate("perfil") { launchSingleTop = true }
+                                    }
+                                },
+                                onAddClick = {
+                                    navController.navigate("nova_despesa")
+                                }
+                            )
+                        }
+
                     }
                 }
             }

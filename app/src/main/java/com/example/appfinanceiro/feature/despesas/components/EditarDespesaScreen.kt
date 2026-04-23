@@ -1,5 +1,6 @@
-package com.example.appfinanceiro.feature.despesas
+package com.example.appfinanceiro.feature.despesas.components
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -59,10 +60,6 @@ import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.network.Category
 import com.example.appfinanceiro.core.network.ExpenseUpdateRequest
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
-import com.example.appfinanceiro.feature.despesas.components.CustomDropdown
-import com.example.appfinanceiro.feature.despesas.components.CustomInput
-import com.example.appfinanceiro.feature.despesas.components.ExpenseValueInput
-import com.example.appfinanceiro.feature.despesas.components.FormLabel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -128,7 +125,7 @@ fun EditarDespesaScreen(expenseId: Int, onNavigateBack: () -> Unit) {
                         dateText = displayFormat.format(parsedDate)
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e("API_DATE", "Erro ao converter a data", e)
+                    Log.e("API_DATE", "Erro ao converter a data", e)
                 }
             } catch (e: Exception) {
                 Toast.makeText(context, "Erro ao carregar despesa", Toast.LENGTH_SHORT).show()

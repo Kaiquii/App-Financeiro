@@ -100,7 +100,6 @@ fun ResumoFinanceiroSection(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -119,13 +118,6 @@ fun ResumoFinanceiroSection(
                     )
                 }
             }
-
-            Text(
-                "Editar",
-                color = PrimaryBlue,
-                fontSize = 14.sp,
-                modifier = Modifier.clickable { }
-            )
         }
 
         if (data == null && isLoading) {
