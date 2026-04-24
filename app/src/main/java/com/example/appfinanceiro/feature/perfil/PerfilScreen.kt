@@ -62,7 +62,8 @@ fun PerfilScreen(
     onNavigate: (Int) -> Unit = {},
     onIncomeSettingsClick: () -> Unit = {},
     onCategoriesClick: () -> Unit = {},
-    onEditProfileClick: () -> Unit = {}
+    onEditProfileClick: () -> Unit = {},
+    onHelpClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -177,7 +178,13 @@ fun PerfilScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             SectionTitle("Ajuda")
-            SettingsItem(icon = Icons.Default.HelpOutline, iconColor = PrimaryBlue, title = "Central de Ajuda", subtitle = "Dúvidas frequentes e Suporte")
+            SettingsItem(
+                icon = Icons.Default.HelpOutline,
+                iconColor = PrimaryBlue,
+                title = "Central de Ajuda",
+                subtitle = "Dúvidas frequentes e Suporte",
+                onClick = onHelpClick
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
 

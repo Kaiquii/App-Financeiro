@@ -33,6 +33,7 @@ import com.example.appfinanceiro.feature.perfil.components.CategoriasScreen
 import com.example.appfinanceiro.feature.perfil.components.ConfiguracoesRendaScreen
 import com.example.appfinanceiro.feature.perfil.components.EditarPerfilScreen
 import com.example.appfinanceiro.feature.relatorios.RelatoriosScreen
+import com.example.appfinanceiro.feature.perfil.components.AjudaScreen
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -176,6 +177,9 @@ class MainActivity : FragmentActivity() {
                                 },
                                 onEditProfileClick = {
                                     navController.navigate("editar_perfil")
+                                },
+                                onHelpClick = {
+                                    navController.navigate("ajuda")
                                 }
                             )
                         }
@@ -253,6 +257,12 @@ class MainActivity : FragmentActivity() {
                                 onAddClick = {
                                     navController.navigate("nova_despesa")
                                 }
+                            )
+                        }
+
+                        composable("ajuda") {
+                            AjudaScreen(
+                                onNavigateBack = { navController.popBackStack() }
                             )
                         }
 
