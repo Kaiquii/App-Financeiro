@@ -1,20 +1,20 @@
 package com.example.appfinanceiro
 
 import android.os.Bundle
-import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -25,10 +25,10 @@ import com.example.appfinanceiro.feature.despesas.DespesasScreen
 import com.example.appfinanceiro.feature.despesas.components.EditarDespesaScreen
 import com.example.appfinanceiro.feature.despesas.components.NovaDespesaScreen
 import com.example.appfinanceiro.feature.home.HomeScreen
-import com.example.appfinanceiro.feature.login.LoginScreen
-import com.example.appfinanceiro.feature.perfil.PerfilScreen
-import com.example.appfinanceiro.feature.login.RegisterScreen
 import com.example.appfinanceiro.feature.login.EsqueciSenhaScreen
+import com.example.appfinanceiro.feature.login.LoginScreen
+import com.example.appfinanceiro.feature.login.RegisterScreen
+import com.example.appfinanceiro.feature.perfil.PerfilScreen
 import com.example.appfinanceiro.feature.perfil.components.CategoriasScreen
 import com.example.appfinanceiro.feature.perfil.components.ConfiguracoesRendaScreen
 import com.example.appfinanceiro.feature.perfil.components.EditarPerfilScreen
