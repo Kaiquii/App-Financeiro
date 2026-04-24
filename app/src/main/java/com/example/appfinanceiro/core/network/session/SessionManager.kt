@@ -3,6 +3,7 @@ package com.example.appfinanceiro.core.data
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -15,12 +16,16 @@ class SessionManager(private val context: Context) {
         private val TOKEN_KEY = stringPreferencesKey("auth_token")
         private val USER_NAME_KEY = stringPreferencesKey("user_name")
         private val USER_EMAIL_KEY = stringPreferencesKey("user_email")
+        private val BIOMETRIC_ENABLED_EMAILS_KEY =
+            stringSetPreferencesKey("biometric_enabled_emails")
     }
 
     val token: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
-
     val userName: Flow<String> = context.dataStore.data.map { it[USER_NAME_KEY] ?: "" }
     val userEmail: Flow<String> = context.dataStore.data.map { it[USER_EMAIL_KEY] ?: "" }
+
+    val biometricEnabledEmails: Flow<Set<String>> =
+        context.dataStore.data.map { it[BIOMETRIC_ENABLED_EMAILS_KEY] ?: emptySet() }
 
     suspend fun saveToken(token: String, name: String, email: String) {
         context.dataStore.edit { preferences ->
@@ -30,7 +35,32 @@ class SessionManager(private val context: Context) {
         }
     }
 
+    fun isBiometricEnabledForUser(email: String): Flow<Boolean> {
+        return biometricEnabledEmails.map { enabledEmails ->
+            enabledEmails.contains(email.trim().lowercase())
+        }
+    }
+
+    suspend fun setBiometricEnabledForUser(email: String, enabled: Boolean) {
+        val normalizedEmail = email.trim().lowercase()
+
+        context.dataStore.edit { preferences ->
+            val current = preferences[BIOMETRIC_ENABLED_EMAILS_KEY] ?: emptySet()
+
+            preferences[BIOMETRIC_ENABLED_EMAILS_KEY] =
+                if (enabled) {
+                    current + normalizedEmail
+                } else {
+                    current - normalizedEmail
+                }
+        }
+    }
+
     suspend fun clearSession() {
-        context.dataStore.edit { it.clear() }
+        context.dataStore.edit { preferences ->
+            preferences.remove(TOKEN_KEY)
+            preferences.remove(USER_NAME_KEY)
+            preferences.remove(USER_EMAIL_KEY)
+        }
     }
 }

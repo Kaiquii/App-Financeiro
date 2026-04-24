@@ -1,7 +1,8 @@
 package com.example.appfinanceiro
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,10 +10,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.appfinanceiro.core.biometric.BiometricAuth
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.theme.AppFinanceiroTheme
 import com.example.appfinanceiro.feature.despesas.DespesasScreen
@@ -28,7 +34,7 @@ import com.example.appfinanceiro.feature.perfil.components.ConfiguracoesRendaScr
 import com.example.appfinanceiro.feature.perfil.components.EditarPerfilScreen
 import com.example.appfinanceiro.feature.relatorios.RelatoriosScreen
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -36,6 +42,48 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val userToken by sessionManager.token.collectAsState(initial = null)
+            val savedUserEmail by sessionManager.userEmail.collectAsState(initial = "")
+            val biometricEnabledEmails by sessionManager.biometricEnabledEmails.collectAsState(initial = emptySet())
+
+            val biometricEnabledForSavedUser =
+                savedUserEmail.isNotBlank() &&
+                        biometricEnabledEmails.contains(savedUserEmail.trim().lowercase())
+
+            val activity = LocalActivity.current as? FragmentActivity
+
+            var unlockedByBiometric by remember { mutableStateOf(false) }
+            var biometricChecked by remember { mutableStateOf(false) }
+
+            LaunchedEffect(userToken, biometricEnabledForSavedUser) {
+                if (userToken == null) {
+                    unlockedByBiometric = false
+                    biometricChecked = true
+                    return@LaunchedEffect
+                }
+
+                if (!biometricEnabledForSavedUser) {
+                    unlockedByBiometric = true
+                    biometricChecked = true
+                    return@LaunchedEffect
+                }
+
+                if (activity != null && BiometricAuth.isAvailable(activity)) {
+                    BiometricAuth.showBiometricPrompt(
+                        activity = activity,
+                        onSuccess = {
+                            unlockedByBiometric = true
+                            biometricChecked = true
+                        },
+                        onError = {
+                            unlockedByBiometric = false
+                            biometricChecked = true
+                        }
+                    )
+                } else {
+                    unlockedByBiometric = false
+                    biometricChecked = true
+                }
+            }
 
             AppFinanceiroTheme {
                 Surface(
@@ -43,7 +91,13 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    val destination = if (userToken != null) "home" else "login"
+
+                    val destination = when {
+                        userToken == null -> "login"
+                        !biometricEnabledForSavedUser -> "home"
+                        biometricChecked && unlockedByBiometric -> "home"
+                        else -> "login"
+                    }
 
                     NavHost(navController = navController, startDestination = destination) {
 

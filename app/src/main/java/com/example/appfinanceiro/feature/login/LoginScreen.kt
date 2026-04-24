@@ -1,5 +1,7 @@
 package com.example.appfinanceiro.feature.login
 
+import androidx.activity.compose.LocalActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,6 +23,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.appfinanceiro.core.biometric.BiometricAuth
+import androidx.compose.material.icons.filled.Fingerprint
 import com.example.appfinanceiro.core.data.SessionManager
 import kotlinx.coroutines.launch
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
@@ -41,12 +45,28 @@ fun LoginScreen(
     var senhaVisivel by remember { mutableStateOf(false) }
     var erroLogin by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var showBiometricOffer by remember { mutableStateOf(false) }
+    var responseEmailForBiometric by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
     val textColor = MaterialTheme.colorScheme.onBackground
+
+    val activity = LocalActivity.current as? FragmentActivity
+    val savedToken by sessionManager.token.collectAsState(initial = null)
+    val savedUserEmail by sessionManager.userEmail.collectAsState(initial = "")
+    val biometricEnabledEmails by sessionManager.biometricEnabledEmails.collectAsState(initial = emptySet())
+
+    val biometricEnabledForSavedUser =
+        savedUserEmail.isNotBlank() &&
+                biometricEnabledEmails.contains(savedUserEmail.trim().lowercase())
+
+    val canUseBiometric = activity != null &&
+            savedToken != null &&
+            biometricEnabledForSavedUser &&
+            BiometricAuth.isAvailable(activity)
 
     Column(
         modifier = Modifier
@@ -139,18 +159,26 @@ fun LoginScreen(
                         try {
                             val response = RetrofitClient.authApi.login(LoginRequest(email, senha))
 
+                            responseEmailForBiometric = response.user.email
+
                             sessionManager.saveToken(
                                 token = response.token,
                                 name = response.user.name,
                                 email = response.user.email
                             )
 
-                            onLoginSuccess()
+                            if (activity != null && BiometricAuth.isAvailable(activity)) {
+                                showBiometricOffer = true
+                            } else {
+                                onLoginSuccess()
+                            }
 
                         } catch (e: Exception) {
+
                             android.util.Log.e("API_ERRO", "Erro no login: ${e.message}")
                             erroLogin = true
-                        } finally {
+                        }
+                        finally {
                             isLoading = false
                         }
                     }
@@ -168,6 +196,93 @@ fun LoginScreen(
             } else {
                 Text("Entrar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (canUseBiometric) {
+            OutlinedButton(
+                onClick = {
+                    BiometricAuth.showBiometricPrompt(
+                        activity = activity,
+                        onSuccess = onLoginSuccess,
+                        onError = { erroLogin = true }
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Fingerprint,
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Entrar com biometria")
+            }
+        }
+
+        if (showBiometricOffer) {
+            AlertDialog(
+                onDismissRequest = { },
+                containerColor = backgroundColor,
+                titleContentColor = textColor,
+                textContentColor = textColor,
+                title = {
+                    Text(
+                        "Ativar biometria?",
+                        color = textColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        "Deseja usar biometria para deixar seu aplicativo mais seguro?",
+                        color = textColor
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                sessionManager.setBiometricEnabledForUser(
+                                    email = responseEmailForBiometric,
+                                    enabled = true
+                                )
+                                showBiometricOffer = false
+                                onLoginSuccess()
+                            }
+                        }
+                    ) {
+                        Text(
+                            "Ativar",
+                            color = PrimaryBlue,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                sessionManager.setBiometricEnabledForUser(
+                                    email = responseEmailForBiometric,
+                                    enabled = false
+                                )
+                                showBiometricOffer = false
+                                onLoginSuccess()
+                            }
+                        }
+                    ) {
+                        Text(
+                            "Agora não",
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.weight(1f))
