@@ -102,6 +102,7 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
     var salarioUpdateFuture by remember { mutableStateOf(true) }
     var adiantamentoUpdateFuture by remember { mutableStateOf(true) }
     var rendaExtraUpdateFuture by remember { mutableStateOf(true) }
+    var rendaExtraRepeatFuture by remember { mutableStateOf(false) }
 
     var incomeToDelete by remember { mutableStateOf<Income?>(null) }
     var incomeDeleteLabel by remember { mutableStateOf("") }
@@ -394,6 +395,9 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                         existingIncome = rendaExtraAtual,
                         updateFuture = rendaExtraUpdateFuture,
                         onUpdateFutureChange = { rendaExtraUpdateFuture = it },
+                        showRepeatFutureOption = rendaExtraAtual == null,
+                        repeatFuture = rendaExtraRepeatFuture,
+                        onRepeatFutureChange = { rendaExtraRepeatFuture = it },
                         onSave = {
                             saveIncome(
                                 context = context,
@@ -401,6 +405,7 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                                 amountText = rendaExtraAmount,
                                 existingIncome = rendaExtraAtual,
                                 updateFuture = rendaExtraUpdateFuture,
+                                repeatFuture = rendaExtraRepeatFuture,
                                 month = selectedMonth,
                                 year = selectedYear,
                                 token = userToken,
@@ -416,6 +421,7 @@ fun ConfiguracoesRendaScreen(onNavigateBack: () -> Unit) {
                         },
                         surfaceColor = surfaceColor
                     )
+
                 }
             }
         }
@@ -441,6 +447,7 @@ private fun saveIncome(
     amountText: String,
     existingIncome: Income?,
     updateFuture: Boolean,
+    repeatFuture: Boolean = false,
     month: Int,
     year: Int,
     token: String?,
@@ -456,6 +463,8 @@ private fun saveIncome(
     scope.launch {
         try {
             if (existingIncome == null) {
+                val isRendaExtra = source.equals("Renda Extra", ignoreCase = true)
+
                 RetrofitClient.financeApi.createIncome(
                     "Bearer $token",
                     IncomeRequest(
@@ -463,11 +472,14 @@ private fun saveIncome(
                         amount = amount,
                         month = month,
                         year = year,
-                        type = "Fixa"
+                        type = "Fixa",
+                        repeat_future = if (isRendaExtra) repeatFuture else null
                     )
                 )
+
                 Toast.makeText(context, "$source cadastrado!", Toast.LENGTH_SHORT).show()
-            } else {
+            }
+            else {
                 RetrofitClient.financeApi.updateIncome(
                     "Bearer $token",
                     existingIncome.id,
@@ -495,7 +507,10 @@ private fun IncomeCard(
     onUpdateFutureChange: (Boolean) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
-    surfaceColor: Color
+    surfaceColor: Color,
+    showRepeatFutureOption: Boolean = false,
+    repeatFuture: Boolean = false,
+    onRepeatFutureChange: (Boolean) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -522,6 +537,20 @@ private fun IncomeCard(
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
+
+        if (showRepeatFutureOption) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = repeatFuture,
+                    onCheckedChange = onRepeatFutureChange
+                )
+                Text(
+                    "Repetir nos próximos meses",
+                    fontSize = 13.sp,
+                    color = TextMuted
+                )
+            }
+        }
 
         if (existingIncome != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {

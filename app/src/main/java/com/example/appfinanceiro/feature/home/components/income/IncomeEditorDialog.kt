@@ -65,6 +65,11 @@ fun IncomeEditorDialog(
     }
     var updateFuture by remember(state) { mutableStateOf(true) }
 
+    val isRendaExtra = state.source.equals("Renda Extra", ignoreCase = true)
+    val isCreating = state.existingIncome == null
+
+    var repeatFuture by remember(state) { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = dialogBackgroundColor,
@@ -95,6 +100,21 @@ fun IncomeEditorDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                if (isCreating && isRendaExtra) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = repeatFuture,
+                            onCheckedChange = { repeatFuture = it },
+                            colors = CheckboxDefaults.colors(checkedColor = PrimaryBlue)
+                        )
+                        Text(
+                            text = "Repetir nos próximos meses",
+                            color = dialogSecondaryTextColor,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
 
                 if (state.existingIncome != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -131,7 +151,8 @@ fun IncomeEditorDialog(
                                         amount = amount,
                                         month = month,
                                         year = year,
-                                        type = "Fixa"
+                                        type = "Fixa",
+                                        repeat_future = if (isRendaExtra) repeatFuture else null
                                     )
                                 )
 

@@ -58,7 +58,8 @@ data class IncomeRequest(
     val amount: Double,
     val month: Int,
     val year: Int,
-    val type: String
+    val type: String,
+    val repeat_future: Boolean? = null
 )
 
 data class IncomeUpdateRequest(
