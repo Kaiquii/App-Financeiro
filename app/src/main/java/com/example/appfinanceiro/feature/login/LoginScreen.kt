@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -41,9 +42,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -78,6 +82,7 @@ fun LoginScreen(
     var pendingUserEmail by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
@@ -127,16 +132,23 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it; erroLogin = false },
+            onValueChange = { email = it.replace(" ", "").replace("\n", ""); erroLogin = false },
             placeholder = { Text("Digite o seu e-mail", color = TextSecondary) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
+            singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = surfaceColor, focusedContainerColor = surfaceColor,
                 unfocusedBorderColor = Color.Transparent, focusedBorderColor = PrimaryBlue,
                 focusedTextColor = textColor, unfocusedTextColor = textColor
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            ),
             enabled = !isLoading
         )
 
@@ -146,10 +158,11 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = senha,
-            onValueChange = { senha = it; erroLogin = false },
+            onValueChange = { senha = it.replace(" ", "").replace("\n", ""); erroLogin = false },
             placeholder = { Text("Digite a sua senha", color = TextSecondary) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
+            singleLine = true,
             visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 val image = if (senhaVisivel) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
@@ -162,7 +175,13 @@ fun LoginScreen(
                 unfocusedBorderColor = Color.Transparent, focusedBorderColor = PrimaryBlue,
                 focusedTextColor = textColor, unfocusedTextColor = textColor
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { focusManager.clearFocus() }
+            ),
             enabled = !isLoading
         )
 
