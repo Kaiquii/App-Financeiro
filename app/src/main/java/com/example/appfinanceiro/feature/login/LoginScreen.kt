@@ -73,6 +73,9 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     var showBiometricOffer by remember { mutableStateOf(false) }
     var responseEmailForBiometric by remember { mutableStateOf("") }
+    var pendingToken by remember { mutableStateOf("") }
+    var pendingUserName by remember { mutableStateOf("") }
+    var pendingUserEmail by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -185,19 +188,22 @@ fun LoginScreen(
                         try {
                             val response = RetrofitClient.authApi.login(LoginRequest(email, senha))
 
+                            pendingToken = response.token
+                            pendingUserName = response.user.name
+                            pendingUserEmail = response.user.email
                             responseEmailForBiometric = response.user.email
-
-                            sessionManager.saveToken(
-                                token = response.token,
-                                name = response.user.name,
-                                email = response.user.email
-                            )
 
                             if (activity != null && BiometricAuth.isAvailable(activity)) {
                                 showBiometricOffer = true
                             } else {
+                                sessionManager.saveToken(
+                                    token = pendingToken,
+                                    name = pendingUserName,
+                                    email = pendingUserEmail
+                                )
                                 onLoginSuccess()
                             }
+
 
                         } catch (e: Exception) {
 
@@ -272,14 +278,22 @@ fun LoginScreen(
                     TextButton(
                         onClick = {
                             coroutineScope.launch {
+                                sessionManager.saveToken(
+                                    token = pendingToken,
+                                    name = pendingUserName,
+                                    email = pendingUserEmail
+                                )
+
                                 sessionManager.setBiometricEnabledForUser(
-                                    email = responseEmailForBiometric,
+                                    email = pendingUserEmail,
                                     enabled = true
                                 )
+
                                 showBiometricOffer = false
                                 onLoginSuccess()
                             }
                         }
+
                     ) {
                         Text(
                             "Ativar",
@@ -292,14 +306,22 @@ fun LoginScreen(
                     TextButton(
                         onClick = {
                             coroutineScope.launch {
+                                sessionManager.saveToken(
+                                    token = pendingToken,
+                                    name = pendingUserName,
+                                    email = pendingUserEmail
+                                )
+
                                 sessionManager.setBiometricEnabledForUser(
-                                    email = responseEmailForBiometric,
+                                    email = pendingUserEmail,
                                     enabled = false
                                 )
+
                                 showBiometricOffer = false
                                 onLoginSuccess()
                             }
                         }
+
                     ) {
                         Text(
                             "Agora não",
