@@ -3,7 +3,6 @@ package com.example.appfinanceiro.feature.login
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,26 +10,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,16 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import com.example.appfinanceiro.core.biometric.BiometricAuth
 import com.example.appfinanceiro.core.data.SessionManager
@@ -60,6 +45,11 @@ import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextSecondary
 import com.example.appfinanceiro.core.network.auth.LoginRequest
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
+import com.example.appfinanceiro.feature.login.components.AuthErrorMessage
+import com.example.appfinanceiro.feature.login.components.AuthHeader
+import com.example.appfinanceiro.feature.login.components.AuthPasswordField
+import com.example.appfinanceiro.feature.login.components.AuthPrimaryButton
+import com.example.appfinanceiro.feature.login.components.AuthTextField
 import kotlinx.coroutines.launch
 
 @Composable
@@ -69,14 +59,15 @@ fun LoginScreen(
     onNavigateToForgot: () -> Unit
 ) {
     val context = LocalContext.current
+    val activity = LocalActivity.current as? FragmentActivity
     val sessionManager = remember { SessionManager(context) }
+
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
-    var senhaVisivel by remember { mutableStateOf(false) }
-    var erroLogin by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+
     var showBiometricOffer by remember { mutableStateOf(false) }
-    var responseEmailForBiometric by remember { mutableStateOf("") }
     var pendingToken by remember { mutableStateOf("") }
     var pendingUserName by remember { mutableStateOf("") }
     var pendingUserEmail by remember { mutableStateOf("") }
@@ -84,11 +75,6 @@ fun LoginScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
-    val backgroundColor = MaterialTheme.colorScheme.background
-    val surfaceColor = MaterialTheme.colorScheme.surface
-    val textColor = MaterialTheme.colorScheme.onBackground
-
-    val activity = LocalActivity.current as? FragmentActivity
     val savedToken by sessionManager.token.collectAsState(initial = null)
     val savedUserEmail by sessionManager.userEmail.collectAsState(initial = "")
     val biometricEnabledEmails by sessionManager.biometricEnabledEmails.collectAsState(initial = emptySet())
@@ -97,266 +83,251 @@ fun LoginScreen(
         savedUserEmail.isNotBlank() &&
                 biometricEnabledEmails.contains(savedUserEmail.trim().lowercase())
 
-    val canUseBiometric = activity != null &&
-            savedToken != null &&
-            biometricEnabledForSavedUser &&
-            BiometricAuth.isAvailable(activity)
+    val canUseBiometric =
+        activity != null &&
+                savedToken != null &&
+                biometricEnabledForSavedUser &&
+                BiometricAuth.isAvailable(activity)
+
+    fun clearError() {
+        errorMessage = ""
+    }
+
+    fun finishLogin(
+        token: String,
+        name: String,
+        userEmail: String,
+        biometricEnabled: Boolean? = null
+    ) {
+        coroutineScope.launch {
+            sessionManager.saveToken(
+                token = token,
+                name = name,
+                email = userEmail
+            )
+
+            if (biometricEnabled != null) {
+                sessionManager.setBiometricEnabledForUser(
+                    email = userEmail,
+                    enabled = biometricEnabled
+                )
+            }
+
+            showBiometricOffer = false
+            onLoginSuccess()
+        }
+    }
+
+    fun login() {
+        if (email.isBlank() || senha.isBlank()) {
+            errorMessage = "Preencha e-mail e senha."
+            return
+        }
+
+        coroutineScope.launch {
+            isLoading = true
+            clearError()
+
+            try {
+                val response = RetrofitClient.authApi.login(
+                    LoginRequest(email.trim(), senha)
+                )
+
+                pendingToken = response.token
+                pendingUserName = response.user.name
+                pendingUserEmail = response.user.email
+
+                if (activity != null && BiometricAuth.isAvailable(activity)) {
+                    showBiometricOffer = true
+                } else {
+                    finishLogin(
+                        token = pendingToken,
+                        name = pendingUserName,
+                        userEmail = pendingUserEmail
+                    )
+                }
+            } catch (e: Exception) {
+                errorMessage = "Credenciais invalidas ou erro no servidor."
+                android.util.Log.e("API_ERRO", "Erro no login: ${e.message}", e)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor)
+            .background(MaterialTheme.colorScheme.background)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(48.dp))
 
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .background(surfaceColor, RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(imageVector = Icons.Default.AccountBalanceWallet, contentDescription = "Logo", tint = PrimaryBlue, modifier = Modifier.size(32.dp))
-        }
+        AuthHeader(
+            icon = Icons.Default.AccountBalanceWallet,
+            iconDescription = "Logo",
+            title = "Bem-vindo de volta",
+            subtitle = "Faca login na sua conta para continuar"
+        )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Text(text = "Bem-vindo de volta", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = textColor)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Faça login na sua conta para continuar", fontSize = 14.sp, color = TextSecondary)
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(text = "E-mail", color = textColor, fontSize = 14.sp, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
+        AuthTextField(
+            label = "E-mail",
             value = email,
-            onValueChange = { email = it.replace(" ", "").replace("\n", ""); erroLogin = false },
-            placeholder = { Text("Digite o seu e-mail", color = TextSecondary) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = surfaceColor, focusedContainerColor = surfaceColor,
-                unfocusedBorderColor = Color.Transparent, focusedBorderColor = PrimaryBlue,
-                focusedTextColor = textColor, unfocusedTextColor = textColor
-            ),
+            onValueChange = {
+                email = it.replace(" ", "").replace("\n", "")
+                clearError()
+            },
+            placeholder = "Digite o seu e-mail",
+            enabled = !isLoading,
+            keyboardType = KeyboardType.Email,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
             keyboardActions = KeyboardActions(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
-            ),
-            enabled = !isLoading
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Senha", color = textColor, fontSize = 14.sp, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
+        AuthPasswordField(
+            label = "Senha",
             value = senha,
-            onValueChange = { senha = it.replace(" ", "").replace("\n", ""); erroLogin = false },
-            placeholder = { Text("Digite a sua senha", color = TextSecondary) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true,
-            visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val image = if (senhaVisivel) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                IconButton(onClick = { senhaVisivel = !senhaVisivel }) {
-                    Icon(imageVector = image, contentDescription = "Mostrar senha", tint = TextSecondary)
-                }
+            onValueChange = {
+                senha = it.replace(" ", "").replace("\n", "")
+                clearError()
             },
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = surfaceColor, focusedContainerColor = surfaceColor,
-                unfocusedBorderColor = Color.Transparent, focusedBorderColor = PrimaryBlue,
-                focusedTextColor = textColor, unfocusedTextColor = textColor
-            ),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = { focusManager.clearFocus() }
-            ),
+            placeholder = "Digite a sua senha",
             enabled = !isLoading
         )
 
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-            TextButton(onClick = onNavigateToForgot) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.End
+        ) {
+            TextButton(
+                onClick = onNavigateToForgot,
+                enabled = !isLoading
+            ) {
                 Text("Esqueci minha senha", color = PrimaryBlue)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (erroLogin) {
-            Text("Credenciais inválidas ou erro no servidor.", color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+        if (errorMessage.isNotBlank()) {
+            AuthErrorMessage(errorMessage)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Button(
-            onClick = {
-                if (email.isNotEmpty() && senha.isNotEmpty()) {
-                    coroutineScope.launch {
-                        isLoading = true
-                        erroLogin = false
-                        try {
-                            val response = RetrofitClient.authApi.login(LoginRequest(email, senha))
-
-                            pendingToken = response.token
-                            pendingUserName = response.user.name
-                            pendingUserEmail = response.user.email
-                            responseEmailForBiometric = response.user.email
-
-                            if (activity != null && BiometricAuth.isAvailable(activity)) {
-                                showBiometricOffer = true
-                            } else {
-                                sessionManager.saveToken(
-                                    token = pendingToken,
-                                    name = pendingUserName,
-                                    email = pendingUserEmail
-                                )
-                                onLoginSuccess()
-                            }
-
-
-                        } catch (e: Exception) {
-
-                            android.util.Log.e("API_ERRO", "Erro no login: ${e.message}")
-                            erroLogin = true
-                        }
-                        finally {
-                            isLoading = false
-                        }
-                    }
-                } else {
-                    erroLogin = true
-                }
-            },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-            enabled = !isLoading
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-            } else {
-                Text("Entrar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            }
-        }
+        AuthPrimaryButton(
+            text = "Entrar",
+            isLoading = isLoading,
+            enabled = true,
+            onClick = { login() }
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (canUseBiometric) {
+        if (canUseBiometric && activity != null) {
             OutlinedButton(
                 onClick = {
                     BiometricAuth.showBiometricPrompt(
                         activity = activity,
                         onSuccess = onLoginSuccess,
-                        onError = { erroLogin = true }
+                        onError = { errorMessage = "Nao foi possivel autenticar com biometria." }
                     )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                shape = RoundedCornerShape(12.dp)
+                enabled = !isLoading
             ) {
                 Icon(
                     imageVector = Icons.Default.Fingerprint,
                     contentDescription = null
                 )
+
                 Spacer(modifier = Modifier.width(8.dp))
+
                 Text("Entrar com biometria")
             }
         }
 
-        if (showBiometricOffer) {
-            AlertDialog(
-                onDismissRequest = { },
-                containerColor = backgroundColor,
-                titleContentColor = textColor,
-                textContentColor = textColor,
-                title = {
-                    Text(
-                        "Ativar biometria?",
-                        color = textColor,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Text(
-                        "Deseja usar biometria para deixar seu aplicativo mais seguro?",
-                        color = textColor
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                sessionManager.saveToken(
-                                    token = pendingToken,
-                                    name = pendingUserName,
-                                    email = pendingUserEmail
-                                )
+        Spacer(modifier = Modifier.weight(1f))
 
-                                sessionManager.setBiometricEnabledForUser(
-                                    email = pendingUserEmail,
-                                    enabled = true
-                                )
+        Row(
+            modifier = Modifier.padding(bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Nao tem uma conta? ", color = TextSecondary)
 
-                                showBiometricOffer = false
-                                onLoginSuccess()
-                            }
-                        }
-
-                    ) {
-                        Text(
-                            "Ativar",
-                            color = PrimaryBlue,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                sessionManager.saveToken(
-                                    token = pendingToken,
-                                    name = pendingUserName,
-                                    email = pendingUserEmail
-                                )
-
-                                sessionManager.setBiometricEnabledForUser(
-                                    email = pendingUserEmail,
-                                    enabled = false
-                                )
-
-                                showBiometricOffer = false
-                                onLoginSuccess()
-                            }
-                        }
-
-                    ) {
-                        Text(
-                            "Agora não",
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+            Text(
+                text = "Cadastre-se",
+                color = PrimaryBlue,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable(enabled = !isLoading) {
+                    onNavigateToRegister()
                 }
             )
         }
+    }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        Row(modifier = Modifier.padding(bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Não tem uma conta? ", color = TextSecondary)
-            Text("Cadastre-se", color = PrimaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onNavigateToRegister() })
-        }
+    if (showBiometricOffer) {
+        AlertDialog(
+            onDismissRequest = { },
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            textContentColor = MaterialTheme.colorScheme.onBackground,
+            title = {
+                Text(
+                    text = "Ativar biometria?",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text("Deseja usar biometria para deixar seu aplicativo mais seguro?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        finishLogin(
+                            token = pendingToken,
+                            name = pendingUserName,
+                            userEmail = pendingUserEmail,
+                            biometricEnabled = true
+                        )
+                    }
+                ) {
+                    Text(
+                        text = "Ativar",
+                        color = PrimaryBlue,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        finishLogin(
+                            token = pendingToken,
+                            name = pendingUserName,
+                            userEmail = pendingUserEmail,
+                            biometricEnabled = false
+                        )
+                    }
+                ) {
+                    Text(
+                        text = "Agora nao",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        )
     }
 }
