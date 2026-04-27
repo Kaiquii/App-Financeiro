@@ -136,8 +136,8 @@ fun IncomeEditorDialog(
             TextButton(
                 onClick = {
                     val amount = amountText.replace(",", ".").toDoubleOrNull()
-                    if (amount == null) {
-                        Toast.makeText(context, "Informe um valor válido", Toast.LENGTH_SHORT).show()
+                    if (amount == null || amount <= 0.0) {
+                        Toast.makeText(context, "Informe um valor maior que zero", Toast.LENGTH_SHORT).show()
                         return@TextButton
                     }
 

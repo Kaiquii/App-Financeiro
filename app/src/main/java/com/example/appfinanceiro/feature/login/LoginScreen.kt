@@ -71,6 +71,7 @@ fun LoginScreen(
     var pendingToken by remember { mutableStateOf("") }
     var pendingUserName by remember { mutableStateOf("") }
     var pendingUserEmail by remember { mutableStateOf("") }
+    var pendingUserRole by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
@@ -97,13 +98,15 @@ fun LoginScreen(
         token: String,
         name: String,
         userEmail: String,
+        userRole: String,
         biometricEnabled: Boolean? = null
     ) {
         coroutineScope.launch {
             sessionManager.saveToken(
                 token = token,
                 name = name,
-                email = userEmail
+                email = userEmail,
+                role = userRole
             )
 
             if (biometricEnabled != null) {
@@ -136,6 +139,7 @@ fun LoginScreen(
                 pendingToken = response.token
                 pendingUserName = response.user.name
                 pendingUserEmail = response.user.email
+                pendingUserRole = response.user.role
 
                 if (activity != null && BiometricAuth.isAvailable(activity)) {
                     showBiometricOffer = true
@@ -143,7 +147,8 @@ fun LoginScreen(
                     finishLogin(
                         token = pendingToken,
                         name = pendingUserName,
-                        userEmail = pendingUserEmail
+                        userEmail = pendingUserEmail,
+                        userRole = pendingUserRole
                     )
                 }
             } catch (e: Exception) {
@@ -299,6 +304,7 @@ fun LoginScreen(
                             token = pendingToken,
                             name = pendingUserName,
                             userEmail = pendingUserEmail,
+                            userRole = pendingUserRole,
                             biometricEnabled = true
                         )
                     }
@@ -317,6 +323,7 @@ fun LoginScreen(
                             token = pendingToken,
                             name = pendingUserName,
                             userEmail = pendingUserEmail,
+                            userRole = pendingUserRole,
                             biometricEnabled = false
                         )
                     }

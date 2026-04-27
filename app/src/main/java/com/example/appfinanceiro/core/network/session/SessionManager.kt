@@ -16,6 +16,7 @@ class SessionManager(private val context: Context) {
         private val TOKEN_KEY = stringPreferencesKey("auth_token")
         private val USER_NAME_KEY = stringPreferencesKey("user_name")
         private val USER_EMAIL_KEY = stringPreferencesKey("user_email")
+        private val USER_ROLE_KEY = stringPreferencesKey("user_role")
         private val BIOMETRIC_ENABLED_EMAILS_KEY =
             stringSetPreferencesKey("biometric_enabled_emails")
     }
@@ -23,15 +24,17 @@ class SessionManager(private val context: Context) {
     val token: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
     val userName: Flow<String> = context.dataStore.data.map { it[USER_NAME_KEY] ?: "" }
     val userEmail: Flow<String> = context.dataStore.data.map { it[USER_EMAIL_KEY] ?: "" }
+    val userRole: Flow<String> = context.dataStore.data.map { it[USER_ROLE_KEY] ?: "" }
 
     val biometricEnabledEmails: Flow<Set<String>> =
         context.dataStore.data.map { it[BIOMETRIC_ENABLED_EMAILS_KEY] ?: emptySet() }
 
-    suspend fun saveToken(token: String, name: String, email: String) {
+    suspend fun saveToken(token: String, name: String, email: String, role: String) {
         context.dataStore.edit { preferences ->
             preferences[TOKEN_KEY] = token
             preferences[USER_NAME_KEY] = name
             preferences[USER_EMAIL_KEY] = email
+            preferences[USER_ROLE_KEY] = role
         }
     }
 
@@ -61,6 +64,7 @@ class SessionManager(private val context: Context) {
             preferences.remove(TOKEN_KEY)
             preferences.remove(USER_NAME_KEY)
             preferences.remove(USER_EMAIL_KEY)
+            preferences.remove(USER_ROLE_KEY)
         }
     }
 }

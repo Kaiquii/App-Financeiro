@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -72,6 +73,15 @@ fun PerfilScreen(
     val sessionManager = remember { SessionManager(context) }
     val userName by sessionManager.userName.collectAsState(initial = "")
     val userEmail by sessionManager.userEmail.collectAsState(initial = "")
+    val userRole by sessionManager.userRole.collectAsState(initial = "")
+
+    val isAdmin = userRole.equals("admin", ignoreCase = true)
+    val roleLabel = when (userRole.lowercase()) {
+        "admin" -> "Administrador"
+        "user" -> "Usuário"
+        else -> userRole.ifBlank { "Usuário" }
+    }
+    val adminRoleColor = Color(0xFFFF9800)
 
     var showExitDialog by remember { mutableStateOf(false) }
 
@@ -145,6 +155,31 @@ fun PerfilScreen(
                 color = TextMuted,
                 fontSize = 14.sp
             )
+
+            if (isAdmin) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = adminRoleColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = roleLabel,
+                        color = adminRoleColor,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            } else {
+                Text(
+                    text = roleLabel,
+                    color = PrimaryBlue,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
