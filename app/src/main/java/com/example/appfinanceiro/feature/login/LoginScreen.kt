@@ -190,12 +190,12 @@ fun LoginScreen(
                     sessionManager.clearSession()
                     errorMessage = e.apiMessage
                 } else {
-                    errorMessage = e.apiMessage ?: "Credenciais invalidas ou erro no servidor."
+                    errorMessage = e.apiMessage ?: "Credenciais inválidas ou erro no servidor."
                 }
 
                 android.util.Log.e("API_ERRO", "Erro no login: ${e.message}", e)
             } catch (e: Exception) {
-                errorMessage = e.userMessageOr("Credenciais invalidas ou erro no servidor.")
+                errorMessage = e.userMessageOr("Credenciais inválidas ou erro no servidor.")
                 android.util.Log.e("API_ERRO", "Erro no login: ${e.message}", e)
             } finally {
                 isLoading = false
@@ -216,7 +216,7 @@ fun LoginScreen(
             icon = Icons.Default.AccountBalanceWallet,
             iconDescription = "Logo",
             title = "Bem-vindo de volta",
-            subtitle = "Faca login na sua conta para continuar"
+            subtitle = "Faça login na sua conta para continuar"
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -301,7 +301,7 @@ fun LoginScreen(
                     BiometricAuth.showBiometricPrompt(
                         activity = biometricActivity,
                         onSuccess = onLoginSuccess,
-                        onError = { errorMessage = "Nao foi possivel autenticar com biometria." }
+                        onError = { errorMessage = "Não foi possível autenticar com biometria." }
                     )
                 },
                 modifier = Modifier
@@ -326,7 +326,7 @@ fun LoginScreen(
             modifier = Modifier.padding(bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Nao tem uma conta? ", color = TextSecondary)
+            Text("Não tem uma conta? ", color = TextSecondary)
 
             Text(
                 text = "Cadastre-se",
@@ -388,7 +388,7 @@ fun LoginScreen(
                     }
                 ) {
                     Text(
-                        text = "Agora nao",
+                        text = "Agora não",
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )

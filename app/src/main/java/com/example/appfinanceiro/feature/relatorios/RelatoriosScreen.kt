@@ -1,19 +1,32 @@
 package com.example.appfinanceiro.feature.relatorios
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -21,8 +34,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -38,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.SessionManager
@@ -49,6 +65,12 @@ import com.example.appfinanceiro.feature.relatorios.components.CategoryExpensesC
 import com.example.appfinanceiro.feature.relatorios.components.IncomeVsExpenseCard
 import com.example.appfinanceiro.feature.relatorios.components.MonthComparisonSection
 import com.example.appfinanceiro.feature.relatorios.components.YearSummarySection
+import com.example.appfinanceiro.feature.relatorios.export.ExportedReport
+import com.example.appfinanceiro.feature.relatorios.export.ReportExportRequest
+import com.example.appfinanceiro.feature.relatorios.export.ReportExportSheet
+import com.example.appfinanceiro.feature.relatorios.export.ReportExportUiState
+import com.example.appfinanceiro.feature.relatorios.export.ReportExportViewModel
+import com.example.appfinanceiro.feature.relatorios.export.fallbackFileName
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,12 +80,14 @@ fun RelatoriosScreen(
     onAddClick: () -> Unit = {},
     onInstallmentsClick: () -> Unit = {},
     onSessionExpired: () -> Unit = {},
-    viewModel: RelatoriosViewModel = viewModel()
+    viewModel: RelatoriosViewModel = viewModel(),
+    exportViewModel: ReportExportViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val userToken by sessionManager.token.collectAsState(initial = null)
     val uiState by viewModel.uiState.collectAsState()
+    val exportState by exportViewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
 
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -84,9 +108,22 @@ fun RelatoriosScreen(
         mutableIntStateOf(previousMonth.get(Calendar.YEAR))
     }
     var selectedRange by rememberSaveable { mutableStateOf(ReportRange.ONE_MONTH) }
+    var showExportSheet by rememberSaveable { mutableStateOf(false) }
+    var pendingLegacyRequest by remember { mutableStateOf<ReportExportRequest?>(null) }
 
     val currentMonthNumber = currentMonthIndex + 1
     val compareMonthNumber = compareMonthIndex + 1
+    val legacySaveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("*/*")
+    ) { destinationUri ->
+        val request = pendingLegacyRequest
+        pendingLegacyRequest = null
+        if (destinationUri != null && request != null) {
+            userToken?.let { token ->
+                exportViewModel.export(token, request, destinationUri)
+            }
+        }
+    }
 
     fun changeMonth(amount: Int) {
         val cal = Calendar.getInstance().apply {
@@ -161,6 +198,29 @@ fun RelatoriosScreen(
         }
     }
 
+    LaunchedEffect(exportState) {
+        when (exportState) {
+            ReportExportUiState.SessionExpired -> {
+                sessionManager.clearSession()
+                exportViewModel.clearResult()
+                showExportSheet = false
+                onSessionExpired()
+            }
+            is ReportExportUiState.Success -> showExportSheet = false
+            else -> Unit
+        }
+    }
+
+    fun startExport(request: ReportExportRequest) {
+        val token = userToken ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            exportViewModel.export(token, request)
+        } else {
+            pendingLegacyRequest = request
+            legacySaveLauncher.launch(fallbackFileName(request))
+        }
+    }
+
     Scaffold(
         modifier = Modifier.swipeNavigation(2, onNavigate),
         containerColor = backgroundColor,
@@ -224,19 +284,59 @@ fun RelatoriosScreen(
                 }
 
                 item(key = "installments_button", contentType = "action") {
-                    Button(
-                        onClick = onInstallmentsClick,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CreditCard,
-                            contentDescription = null
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Compromissos Parcelados")
+                        OutlinedButton(
+                            onClick = {
+                                exportViewModel.clearResult()
+                                showExportSheet = true
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "Exportar relatórios",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                maxLines = 2
+                            )
+                        }
+
+                        Button(
+                            onClick = onInstallmentsClick,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CreditCard,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "Compromissos parcelados",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                maxLines = 2
+                            )
+                        }
                     }
                 }
 
@@ -280,5 +380,101 @@ fun RelatoriosScreen(
                 }
             }
         }
+    }
+
+    if (showExportSheet) {
+        ReportExportSheet(
+            month = currentMonthNumber,
+            year = currentYear,
+            initialCompareMonth = compareMonthNumber,
+            initialCompareYear = compareYear,
+            isExporting = exportState is ReportExportUiState.Exporting,
+            errorMessage = (exportState as? ReportExportUiState.Error)?.message,
+            onDismiss = {
+                showExportSheet = false
+                exportViewModel.clearResult()
+            },
+            onExport = ::startExport,
+            onCancelExport = exportViewModel::cancelExport
+        )
+    }
+
+    (exportState as? ReportExportUiState.Success)?.let { success ->
+        ExportSuccessDialog(
+            report = success.report,
+            onOpen = { openReport(context, success.report) },
+            onShare = { shareReport(context, success.report) },
+            onDismiss = exportViewModel::clearResult
+        )
+    }
+}
+
+@Composable
+private fun ExportSuccessDialog(
+    report: ExportedReport,
+    onOpen: () -> Unit,
+    onShare: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Relatório salvo", fontWeight = FontWeight.Bold) },
+        text = {
+            Text(
+                text = "${report.fileName}\n\nO arquivo está pronto para abrir ou compartilhar."
+            )
+        },
+        confirmButton = {
+            Button(onClick = onOpen) {
+                Icon(Icons.Default.OpenInNew, contentDescription = null)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Abrir")
+            }
+        },
+        dismissButton = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedButton(onClick = onShare) {
+                    Icon(Icons.Default.Share, contentDescription = null)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Compartilhar")
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Fechar")
+                }
+            }
+        }
+    )
+}
+
+private fun openReport(context: android.content.Context, report: ExportedReport) {
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(report.uri, report.mimeType)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    try {
+        context.startActivity(intent)
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(
+            context,
+            "Nenhum aplicativo instalado consegue abrir este formato.",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+}
+
+private fun shareReport(context: android.content.Context, report: ExportedReport) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = report.mimeType
+        putExtra(Intent.EXTRA_STREAM, report.uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    try {
+        context.startActivity(Intent.createChooser(intent, "Compartilhar relatório"))
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(
+            context,
+            "Não há aplicativo disponível para compartilhar o arquivo.",
+            Toast.LENGTH_LONG
+        ).show()
     }
 }

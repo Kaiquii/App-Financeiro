@@ -15,3 +15,10 @@ Estas regras devem ser consideradas em toda mudança visual do aplicativo.
 - Toda nova interface deve ser conferida nos temas claro e escuro antes de ser considerada pronta.
 - Usar `MaterialTheme.colorScheme` e os tokens de tema do projeto para fundo, superfícies, texto e erros; não fixar cores de fundo ou texto que prejudiquem um dos temas.
 - Garantir contraste suficiente para textos, ícones, bordas, estados desabilitados e botões nos dois temas.
+
+## Textos e idioma
+
+- Todo texto exibido ao usuário deve estar em português brasileiro, com ortografia, acentuação, concordância e pontuação revisadas.
+- Manter os arquivos de código e recursos em UTF-8; limitações técnicas não justificam remover acentos dos textos da interface.
+- Antes de concluir uma mudança, revisar títulos, botões, campos, mensagens de erro, estados vazios, notificações e descrições de acessibilidade.
+- Não alterar nomes de campos, valores ou mensagens que façam parte do contrato com a API. Quando necessário, adaptar apenas o texto apresentado na interface.

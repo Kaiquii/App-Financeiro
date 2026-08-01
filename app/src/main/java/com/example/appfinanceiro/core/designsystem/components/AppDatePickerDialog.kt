@@ -108,7 +108,7 @@ fun AppDatePickerDialog(
                 Icon(
                     imageVector = if (inputMode) Icons.Default.DateRange else Icons.Default.Edit,
                     contentDescription = if (inputMode) {
-                        "Selecionar data no calendario"
+                        "Selecionar data no calendário"
                     } else {
                         "Digitar data"
                     },

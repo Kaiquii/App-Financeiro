@@ -97,7 +97,7 @@ class AssistantViewModel(
                 _uiState.update {
                     it.copy(
                         isSending = false,
-                        errorMessage = e.userMessageOr("Nao foi possivel falar com o assistente.")
+                        errorMessage = e.userMessageOr("Não foi possível falar com o assistente.")
                     )
                 }
             }

@@ -140,6 +140,17 @@ fun InstallmentCommitmentsScreen(
                         )
                     }
                 },
+                actions = {
+                    if (uiState.isLoading && uiState.data != null) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .padding(end = 16.dp)
+                                .size(18.dp),
+                            color = PrimaryBlue,
+                            strokeWidth = 2.dp
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
             )
         }
@@ -234,16 +245,6 @@ fun InstallmentCommitmentsScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (uiState.isLoading) {
-                            item {
-                                LinearProgressIndicator(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    color = PrimaryBlue,
-                                    trackColor = PrimaryBlue.copy(alpha = 0.12f)
-                                )
-                            }
-                        }
-
                         item {
                             MonthSwitcher(
                                 month = selectedMonth,
@@ -283,7 +284,7 @@ fun InstallmentCommitmentsScreen(
                                 Tab(
                                     selected = selectedTab == 1,
                                     onClick = { selectedTab = 1 },
-                                    text = { Text("Calendario") }
+                                    text = { Text("Calendário") }
                                 )
                             }
                         }
@@ -327,12 +328,12 @@ private fun PeriodInfo(
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Text(
-            text = "Periodo",
+            text = "Período",
             color = TextMuted,
             fontSize = 13.sp
         )
         Text(
-            text = "${formatMonthYear(startMonth, startYear)} ate ${formatMonthYear(end.first, end.second)}",
+            text = "${formatMonthYear(startMonth, startYear)} até ${formatMonthYear(end.first, end.second)}",
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold
@@ -578,7 +579,7 @@ private fun CompactCurrentMonthPaymentToggle(
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
-            text = "Mes atual pago",
+            text = "Mês atual pago",
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
@@ -614,12 +615,12 @@ private fun CurrentMonthPaymentToggle(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Marcar mes atual como pago",
+                    text = "Marcar mês atual como pago",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Quando ativo, a proxima parcela começa no mes seguinte.",
+                    text = "Quando ativo, a próxima parcela começa no mês seguinte.",
                     color = TextMuted,
                     fontSize = 12.sp
                 )
@@ -832,7 +833,7 @@ private fun PurchaseCard(purchase: InstallmentPurchase) {
 
             purchase.proxima_parcela?.let { next ->
                 Text(
-                    text = "Proxima parcela: ${next.parcela_atual}/${next.total_parcelas} em ${monthName(next.mes)}/${next.ano} - ${formatCurrency(next.valor)}",
+                    text = "Próxima parcela: ${next.parcela_atual}/${next.total_parcelas} em ${monthName(next.mes)}/${next.ano} - ${formatCurrency(next.valor)}",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 13.sp
                 )
@@ -845,12 +846,12 @@ private fun PurchaseCard(purchase: InstallmentPurchase) {
 private fun PurchasePeriodInfo(purchase: InstallmentPurchase) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-            text = "Periodo",
+            text = "Período",
             color = TextMuted,
             fontSize = 13.sp
         )
         Text(
-            text = "${formatMonthYear(purchase.primeiro_mes, purchase.primeiro_ano)} ate ${
+            text = "${formatMonthYear(purchase.primeiro_mes, purchase.primeiro_ano)} até ${
                 formatMonthYear(purchase.ultimo_mes, purchase.ultimo_ano)
             }",
             color = MaterialTheme.colorScheme.onSurface,
@@ -912,7 +913,7 @@ private fun TimelineMonthCard(month: InstallmentTimelineMonth) {
 
             if (month.parcelas.isEmpty()) {
                 Text(
-                    text = "Nenhuma parcela neste mes.",
+                    text = "Nenhuma parcela neste mês.",
                     color = TextMuted,
                     fontSize = 13.sp
                 )
@@ -983,7 +984,7 @@ private fun EmptyState(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Voce ainda nao possui compras parceladas.",
+            text = "Você ainda não possui compras parceladas.",
             color = TextMuted,
             fontSize = 16.sp
         )
@@ -1016,7 +1017,7 @@ private fun monthName(month: Int): String {
     return when (month) {
         1 -> "Janeiro"
         2 -> "Fevereiro"
-        3 -> "Marco"
+        3 -> "Março"
         4 -> "Abril"
         5 -> "Maio"
         6 -> "Junho"

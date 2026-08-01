@@ -135,7 +135,7 @@ fun AssistantScreen(
             startListening()
         } else {
             isListening = false
-            voiceError = "Permissao de microfone negada."
+            voiceError = "Permissão de microfone negada."
         }
     }
 
@@ -180,13 +180,13 @@ fun AssistantScreen(
             override fun onError(error: Int) {
                 isListening = false
                 voiceError = when (error) {
-                    SpeechRecognizer.ERROR_NO_MATCH -> "Nao entendi. Tente falar de novo."
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Nao ouvi nada. Toque no microfone e tente novamente."
-                    SpeechRecognizer.ERROR_AUDIO -> "Nao foi possivel acessar o audio."
+                    SpeechRecognizer.ERROR_NO_MATCH -> "Não entendi. Tente falar de novo."
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Não ouvi nada. Toque no microfone e tente novamente."
+                    SpeechRecognizer.ERROR_AUDIO -> "Não foi possível acessar o áudio."
                     SpeechRecognizer.ERROR_NETWORK,
                     SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Falha de rede ao transcrever a voz."
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Permissao de microfone negada."
-                    else -> "Nao foi possivel transcrever a voz."
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Permissão de microfone negada."
+                    else -> "Não foi possível transcrever a voz."
                 }
             }
 
@@ -198,7 +198,7 @@ fun AssistantScreen(
                     ?.trim()
 
                 if (transcript.isNullOrBlank()) {
-                    voiceError = "Nao entendi. Tente falar de novo."
+                    voiceError = "Não entendi. Tente falar de novo."
                 } else {
                     input = transcript
                     voiceError = null

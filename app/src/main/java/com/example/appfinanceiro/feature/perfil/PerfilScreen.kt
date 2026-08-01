@@ -734,10 +734,10 @@ private fun prepareProfilePhoto(context: Context, uri: Uri): PreparedProfilePhot
 
     val originalBytes = context.contentResolver.openInputStream(uri)?.use { input ->
         input.readBytes()
-    } ?: throw IllegalArgumentException("Nao foi possivel ler a imagem selecionada.")
+    } ?: throw IllegalArgumentException("Não foi possível ler a imagem selecionada.")
 
     val originalBitmap = BitmapFactory.decodeByteArray(originalBytes, 0, originalBytes.size)
-        ?: throw IllegalArgumentException("Nao foi possivel decodificar a imagem selecionada.")
+        ?: throw IllegalArgumentException("Não foi possível decodificar a imagem selecionada.")
 
     val orientation = context.contentResolver.openInputStream(uri)?.use { input ->
         ExifInterface(input).getAttributeInt(
