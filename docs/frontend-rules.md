@@ -15,6 +15,7 @@ Estas regras devem ser consideradas em toda mudança visual do aplicativo.
 - Toda nova interface deve ser conferida nos temas claro e escuro antes de ser considerada pronta.
 - Usar `MaterialTheme.colorScheme` e os tokens de tema do projeto para fundo, superfícies, texto e erros; não fixar cores de fundo ou texto que prejudiquem um dos temas.
 - Garantir contraste suficiente para textos, ícones, bordas, estados desabilitados e botões nos dois temas.
+- Todos os modais e diálogos devem seguir o mesmo padrão visual do aplicativo: usar `MaterialTheme.colorScheme.background` como fundo, `onBackground` para título e conteúdo e os tokens do tema para ações. No modo escuro, não usar o fundo acinzentado padrão do Material sem uma decisão visual explícita.
 
 ## Textos e idioma
 

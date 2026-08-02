@@ -416,8 +416,13 @@ private fun ExportSuccessDialog(
     onShare: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = colorScheme.background,
+        titleContentColor = colorScheme.onBackground,
+        textContentColor = colorScheme.onBackground,
         title = { Text("Relatório salvo", fontWeight = FontWeight.Bold) },
         text = {
             Text(
