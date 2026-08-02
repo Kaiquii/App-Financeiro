@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +35,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.theme.GreenPositive
+import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.SurfaceCardBlue
 import com.example.appfinanceiro.core.designsystem.theme.SurfaceCardBlueLight
@@ -103,23 +102,12 @@ fun ResumoFinanceiroSection(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "Resumo Financeiro",
-                color = textColor,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            if (isLoading && data != null) {
-                Spacer(modifier = Modifier.width(8.dp))
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    color = PrimaryBlue,
-                    strokeWidth = 2.dp
-                )
-            }
-        }
+        Text(
+            text = "Resumo Financeiro",
+            color = textColor,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
 
         if (data == null && errorMessage != null) {
             Column(
@@ -147,11 +135,10 @@ fun ResumoFinanceiroSection(
                     .height(250.dp),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = PrimaryBlue)
+                AppLoadingIndicator(size = 40.dp, strokeWidth = 4.dp)
             }
         } else {
             Column(
-                modifier = Modifier.alpha(if (isLoading) 0.5f else 1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 val salario = data?.salario ?: 0.0

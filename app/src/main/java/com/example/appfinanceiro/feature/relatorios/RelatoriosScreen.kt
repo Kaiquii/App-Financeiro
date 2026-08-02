@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,8 +56,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
+import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.designsystem.components.swipeNavigation
+import com.example.appfinanceiro.core.designsystem.components.dataRequestErrorMessage
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.feature.home.components.MonthSelector
 import com.example.appfinanceiro.feature.relatorios.components.CategoryExpensesCard
@@ -113,6 +115,17 @@ fun RelatoriosScreen(
 
     val currentMonthNumber = currentMonthIndex + 1
     val compareMonthNumber = compareMonthIndex + 1
+    val hasCachedReportData = uiState.summaryData != null ||
+            uiState.categoryData.isNotEmpty() ||
+            uiState.chartData.isNotEmpty() ||
+            uiState.yearlySummary != null
+    val reportErrorBannerMessage = uiState.errorMessage?.let { error ->
+        dataRequestErrorMessage(
+            errorMessage = error,
+            showingPreviousData = hasCachedReportData,
+            dataLabel = "os relatórios"
+        )
+    }
     val legacySaveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("*/*")
     ) { destinationUri ->
@@ -242,6 +255,11 @@ fun RelatoriosScreen(
                         )
                     }
                 },
+                actions = {
+                    if (uiState.isLoading && uiState.hasLoadedOnce) {
+                        AppLoadingIndicator(modifier = Modifier.padding(end = 16.dp))
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
             )
         },
@@ -253,14 +271,14 @@ fun RelatoriosScreen(
             )
         }
     ) { paddingValues ->
-        if (uiState.isLoading) {
+        if (uiState.isLoading && !uiState.hasLoadedOnce) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = PrimaryBlue)
+                AppLoadingIndicator(size = 40.dp, strokeWidth = 4.dp)
             }
         } else {
             LazyColumn(
@@ -283,69 +301,83 @@ fun RelatoriosScreen(
                     )
                 }
 
-                item(key = "installments_button", contentType = "action") {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                exportViewModel.clearResult()
-                                showExportSheet = true
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(52.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FileDownload,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                text = "Exportar relatórios",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center,
-                                maxLines = 2
-                            )
-                        }
-
-                        Button(
-                            onClick = onInstallmentsClick,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(52.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CreditCard,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                text = "Compromissos parcelados",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center,
-                                maxLines = 2
-                            )
-                        }
+                reportErrorBannerMessage?.let { message ->
+                    item(key = "report_error", contentType = "status") {
+                        AppDataErrorBanner(
+                            message = message,
+                            isRetrying = uiState.isLoading,
+                            onRetry = {
+                                userToken?.let { token ->
+                                    viewModel.loadReports(token, currentMonthNumber, currentYear)
+                                }
+                            }
+                        )
                     }
                 }
 
-                item(key = "category_expenses", contentType = "card") {
-                    CategoryExpensesCard(
-                        totalExpense = uiState.summaryData?.total_expense ?: 0.0,
-                        categories = uiState.categoryData
-                    )
-                }
+                item(key = "installments_button", contentType = "action") {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    exportViewModel.clearResult()
+                                    showExportSheet = true
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FileDownload,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "Exportar relatórios",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2
+                                )
+                            }
+
+                            Button(
+                                onClick = onInstallmentsClick,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CreditCard,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "Compromissos parcelados",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2
+                                )
+                            }
+                        }
+                    }
+
+                    item(key = "category_expenses", contentType = "card") {
+                        CategoryExpensesCard(
+                            totalExpense = uiState.summaryData?.total_expense ?: 0.0,
+                            categories = uiState.categoryData
+                        )
+                    }
 
                 item(key = "month_comparison", contentType = "card") {
                     MonthComparisonSection(

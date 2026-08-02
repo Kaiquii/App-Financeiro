@@ -23,6 +23,9 @@ data class HomeUiState(
     val isSummaryLoading: Boolean = false,
     val isIncomesLoading: Boolean = false,
     val isExpensesLoading: Boolean = false,
+    val hasLoadedSummary: Boolean = false,
+    val hasLoadedIncomes: Boolean = false,
+    val hasLoadedExpenses: Boolean = false,
     val summaryError: String? = null,
     val incomesError: String? = null,
     val expensesError: String? = null,
@@ -45,13 +48,13 @@ class HomeViewModel(
     fun loadSummary(token: String, month: Int, year: Int) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(isSummaryLoading = true, summaryError = null, isSessionExpired = false)
+                it.copy(isSummaryLoading = true, isSessionExpired = false)
             }
 
             try {
                 val summary = repository.getSummary(token, month, year)
                 _uiState.update {
-                    it.copy(summaryData = summary)
+                    it.copy(summaryData = summary, summaryError = null)
                 }
             } catch (e: SessionExpiredException) {
                 _uiState.update {
@@ -64,7 +67,7 @@ class HomeViewModel(
                 }
             } finally {
                 _uiState.update {
-                    it.copy(isSummaryLoading = false)
+                    it.copy(isSummaryLoading = false, hasLoadedSummary = true)
                 }
             }
         }
@@ -73,7 +76,7 @@ class HomeViewModel(
     fun loadIncomes(token: String, month: Int, year: Int) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(isIncomesLoading = true, incomesError = null, isSessionExpired = false)
+                it.copy(isIncomesLoading = true, isSessionExpired = false)
             }
 
             try {
@@ -88,7 +91,8 @@ class HomeViewModel(
                             salario = totals.salary,
                             adiantamento = totals.advance,
                             renda_extra_amt = totals.extraIncome
-                        )
+                        ),
+                        incomesError = null
                     )
                 }
             } catch (e: SessionExpiredException) {
@@ -102,7 +106,7 @@ class HomeViewModel(
                 }
             } finally {
                 _uiState.update {
-                    it.copy(isIncomesLoading = false)
+                    it.copy(isIncomesLoading = false, hasLoadedIncomes = true)
                 }
             }
         }
@@ -111,7 +115,7 @@ class HomeViewModel(
     fun loadExpenses(token: String, month: Int, year: Int) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(isExpensesLoading = true, expensesError = null, isSessionExpired = false)
+                it.copy(isExpensesLoading = true, isSessionExpired = false)
             }
 
             try {
@@ -123,7 +127,8 @@ class HomeViewModel(
                         categoriesMap = categories.categories.associate { category ->
                             category.id to category.name
                         },
-                        expensesData = expenses.expenses
+                        expensesData = expenses.expenses,
+                        expensesError = null
                     )
                 }
             } catch (e: SessionExpiredException) {
@@ -137,7 +142,7 @@ class HomeViewModel(
                 }
             } finally {
                 _uiState.update {
-                    it.copy(isExpensesLoading = false)
+                    it.copy(isExpensesLoading = false, hasLoadedExpenses = true)
                 }
             }
         }

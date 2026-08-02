@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +50,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.FinanceActionsViewModel
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.data.userMessageOr
+import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
+import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
+import com.example.appfinanceiro.core.designsystem.components.dataRequestErrorMessage
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.network.Category
 import com.example.appfinanceiro.core.network.CategoryRequest
@@ -72,6 +74,8 @@ fun CategoriasScreen(
 
     var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var hasLoadedOnce by remember { mutableStateOf(false) }
+    var loadErrorMessage by remember { mutableStateOf<String?>(null) }
     var refreshTrigger by remember { mutableIntStateOf(0) }
 
     var newCategoryName by remember { mutableStateOf("") }
@@ -87,14 +91,12 @@ fun CategoriasScreen(
             try {
                 val response = actionsViewModel.getCategories(userToken!!)
                 categories = response.categories
+                loadErrorMessage = null
             } catch (e: Exception) {
-                Toast.makeText(
-                    context,
-                    e.userMessageOr("Erro ao carregar categorias"),
-                    Toast.LENGTH_SHORT
-                ).show()
+                loadErrorMessage = e.userMessageOr("Erro ao carregar categorias")
             } finally {
                 isLoading = false
+                hasLoadedOnce = true
             }
         }
     }
@@ -256,18 +258,23 @@ fun CategoriasScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor)
                     }
                 },
+                actions = {
+                    if (isLoading && hasLoadedOnce) {
+                        AppLoadingIndicator(modifier = Modifier.padding(end = 16.dp))
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
             )
         }
     ) { paddingValues ->
-        if (isLoading) {
+        if (isLoading && !hasLoadedOnce) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = PrimaryBlue)
+                AppLoadingIndicator(size = 40.dp, strokeWidth = 4.dp)
             }
         } else {
             LazyColumn(
@@ -278,6 +285,20 @@ fun CategoriasScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
+                loadErrorMessage?.let { error ->
+                    item(key = "categories_error") {
+                        AppDataErrorBanner(
+                            message = dataRequestErrorMessage(
+                                errorMessage = error,
+                                showingPreviousData = categories.isNotEmpty(),
+                                dataLabel = "as categorias"
+                            ),
+                            isRetrying = isLoading,
+                            onRetry = { refreshTrigger++ }
+                        )
+                    }
+                }
+
                 item {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),

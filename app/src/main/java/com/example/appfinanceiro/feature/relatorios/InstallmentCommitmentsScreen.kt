@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.GreenPositive
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
@@ -142,13 +142,7 @@ fun InstallmentCommitmentsScreen(
                 },
                 actions = {
                     if (uiState.isLoading && uiState.data != null) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .padding(end = 16.dp)
-                                .size(18.dp),
-                            color = PrimaryBlue,
-                            strokeWidth = 2.dp
-                        )
+                        AppLoadingIndicator(modifier = Modifier.padding(end = 16.dp))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
@@ -165,7 +159,7 @@ fun InstallmentCommitmentsScreen(
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = PrimaryBlue)
+                    AppLoadingIndicator(size = 40.dp, strokeWidth = 4.dp)
                 }
             }
 

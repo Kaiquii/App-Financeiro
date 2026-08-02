@@ -23,3 +23,13 @@ Estas regras devem ser consideradas em toda mudança visual do aplicativo.
 - Manter os arquivos de código e recursos em UTF-8; limitações técnicas não justificam remover acentos dos textos da interface.
 - Antes de concluir uma mudança, revisar títulos, botões, campos, mensagens de erro, estados vazios, notificações e descrições de acessibilidade.
 - Não alterar nomes de campos, valores ou mensagens que façam parte do contrato com a API. Quando necessário, adaptar apenas o texto apresentado na interface.
+
+## Estados de carregamento
+
+- Usar o componente `AppLoadingIndicator` para manter tamanho, cor e espessura consistentes nos indicadores de carregamento.
+- Exibir o carregamento central apenas na primeira abertura, quando ainda não existe conteúdo disponível.
+- Em atualizações de mês, data ou filtros, manter o conteúdo atual na tela e mostrar somente o indicador compacto no topo. A interface não deve piscar nem ser substituída por uma tela vazia.
+- Se uma atualização falhar e a tela continuar mostrando dados anteriores, avisar claramente que eles podem estar desatualizados. Para falhas de conexão, usar o componente compacto `AppDataErrorBanner` com a mensagem “Sem conexão. Exibindo os últimos dados carregados.” e oferecer a ação “Tentar novamente”.
+- Ao tocar em “Tentar novamente”, manter o aviso visível, trocar a ação por “Tentando...” com indicador de progresso e impedir toques repetidos até a requisição terminar. Remover o aviso somente após uma resposta bem-sucedida.
+- Em telas de painel, como Relatórios, uma falha inicial não deve desmontar a estrutura nem deixar uma grande área vazia. Manter ações e cards em seus estados vazios ou zerados, acompanhados do aviso de erro para deixar claro que os valores não foram carregados.
+- Nunca apresentar dados antigos como se pertencessem ao novo mês, data ou filtro sem informar o usuário.

@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
+import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
+import com.example.appfinanceiro.core.designsystem.components.dataRequestErrorMessage
 import com.example.appfinanceiro.core.designsystem.components.ExitConfirmationDialog
 import com.example.appfinanceiro.core.designsystem.components.ExpenseDetailsDialog
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
@@ -76,6 +79,32 @@ fun HomeScreen(
     val userToken by sessionManager.token.collectAsState(initial = null)
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
+    val isLoadingMonth = uiState.isSummaryLoading ||
+            uiState.isIncomesLoading ||
+            uiState.isExpensesLoading
+    val hasLoadedHome = uiState.hasLoadedSummary &&
+            uiState.hasLoadedIncomes &&
+            uiState.hasLoadedExpenses
+    val refreshErrors = listOfNotNull(
+        uiState.summaryError,
+        uiState.incomesError,
+        uiState.expensesError
+    )
+    val hasVisibleCachedData = uiState.summaryData != null ||
+            uiState.incomesData.isNotEmpty() ||
+            uiState.expensesData.isNotEmpty()
+    val staleDataMessage = if (
+        hasLoadedHome &&
+        hasVisibleCachedData &&
+        refreshErrors.isNotEmpty()
+    ) {
+        dataRequestErrorMessage(
+            errorMessage = refreshErrors.first(),
+            showingPreviousData = true
+        )
+    } else {
+        null
+    }
 
     var currentMonthIndex by rememberSaveable {
         mutableIntStateOf(Calendar.getInstance().get(Calendar.MONTH))
@@ -128,19 +157,32 @@ fun HomeScreen(
                 it.source.equals("Salário", ignoreCase = true)) &&
                 it.month == currentMonthIndex + 1 &&
                 it.year == currentYear
-    }
+    } ?: if (uiState.isIncomesLoading && uiState.hasLoadedIncomes) {
+        uiState.incomesData.firstOrNull {
+            it.source.equals("Salario", ignoreCase = true) ||
+                    it.source.equals("Salário", ignoreCase = true)
+        }
+    } else null
 
     val adiantamentoAtual = uiState.incomesData.firstOrNull {
         it.source.equals("Adiantamento", ignoreCase = true) &&
                 it.month == currentMonthIndex + 1 &&
                 it.year == currentYear
-    }
+    } ?: if (uiState.isIncomesLoading && uiState.hasLoadedIncomes) {
+        uiState.incomesData.firstOrNull {
+            it.source.equals("Adiantamento", ignoreCase = true)
+        }
+    } else null
 
     val rendaExtraAtual = uiState.incomesData.firstOrNull {
         it.source.equals("Renda Extra", ignoreCase = true) &&
                 it.month == currentMonthIndex + 1 &&
                 it.year == currentYear
-    }
+    } ?: if (uiState.isIncomesLoading && uiState.hasLoadedIncomes) {
+        uiState.incomesData.firstOrNull {
+            it.source.equals("Renda Extra", ignoreCase = true)
+        }
+    } else null
 
     fun changeMonth(amount: Int) {
         val cal = Calendar.getInstance().apply {
@@ -189,6 +231,9 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    if (isLoadingMonth && hasLoadedHome) {
+                        AppLoadingIndicator(modifier = Modifier.padding(end = 4.dp))
+                    }
                     IconButton(onClick = onAssistantClick) {
                         Icon(
                             imageVector = Icons.Default.Chat,
@@ -225,6 +270,20 @@ fun HomeScreen(
                 )
             }
 
+            staleDataMessage?.let { message ->
+                item(key = "stale_data_warning") {
+                    AppDataErrorBanner(
+                        message = message,
+                        isRetrying = isLoadingMonth,
+                        onRetry = {
+                            userToken?.let { token ->
+                                viewModel.loadAll(token, currentMonthIndex + 1, currentYear)
+                            }
+                        }
+                    )
+                }
+            }
+
             item {
                 ResumoFinanceiroSection(
                     isLoading = uiState.isSummaryLoading || uiState.isIncomesLoading,
@@ -249,6 +308,7 @@ fun HomeScreen(
             item {
                 DespesasHeaderSection(
                     isLoading = uiState.isExpensesLoading,
+                    hasLoadedOnce = uiState.hasLoadedExpenses,
                     errorMessage = uiState.expensesError,
                     onRetry = {
                         userToken?.let { token ->

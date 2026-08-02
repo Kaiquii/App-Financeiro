@@ -24,7 +24,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +56,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.FinanceActionsViewModel
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.data.userMessageOr
+import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
+import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
+import com.example.appfinanceiro.core.designsystem.components.dataRequestErrorMessage
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextMuted
@@ -93,6 +95,8 @@ fun ConfiguracoesRendaScreen(
 
     var incomes by remember { mutableStateOf<List<Income>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var hasLoadedOnce by remember { mutableStateOf(false) }
+    var loadErrorMessage by remember { mutableStateOf<String?>(null) }
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var isDeleting by remember { mutableStateOf(false) }
 
@@ -117,10 +121,12 @@ fun ConfiguracoesRendaScreen(
             try {
                 val incomesResponse = actionsViewModel.getIncomes(userToken!!)
                 incomes = incomesResponse.incomes
+                loadErrorMessage = null
             } catch (e: Exception) {
-                Toast.makeText(context, "Erro ao carregar configurações", Toast.LENGTH_SHORT).show()
+                loadErrorMessage = e.userMessageOr("Erro ao carregar configurações de renda")
             } finally {
                 isLoading = false
+                hasLoadedOnce = true
             }
         }
     }
@@ -280,18 +286,23 @@ fun ConfiguracoesRendaScreen(
                         )
                     }
                 },
+                actions = {
+                    if (isLoading && hasLoadedOnce) {
+                        AppLoadingIndicator(modifier = Modifier.padding(end = 16.dp))
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
             )
         }
     ) { paddingValues ->
-        if (isLoading) {
+        if (isLoading && !hasLoadedOnce) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = PrimaryBlue)
+                AppLoadingIndicator(size = 40.dp, strokeWidth = 4.dp)
             }
         } else {
             LazyColumn(
@@ -302,6 +313,20 @@ fun ConfiguracoesRendaScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
+                loadErrorMessage?.let { error ->
+                    item(key = "income_settings_error") {
+                        AppDataErrorBanner(
+                            message = dataRequestErrorMessage(
+                                errorMessage = error,
+                                showingPreviousData = incomes.isNotEmpty(),
+                                dataLabel = "as configurações de renda"
+                            ),
+                            isRetrying = isLoading,
+                            onRetry = { refreshTrigger++ }
+                        )
+                    }
+                }
+
                 item {
                     Text(
                         "Rendas Fixas",

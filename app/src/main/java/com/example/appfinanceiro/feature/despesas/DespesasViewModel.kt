@@ -17,6 +17,7 @@ data class DespesasUiState(
     val expensesData: List<Expense> = emptyList(),
     val categoriesMap: Map<Int, String> = emptyMap(),
     val isLoading: Boolean = true,
+    val hasLoadedOnce: Boolean = false,
     val isDeleting: Boolean = false,
     val errorMessage: String? = null,
     val deleteSuccessMessage: String? = null,
@@ -34,7 +35,7 @@ class DespesasViewModel(
     fun loadExpenses(token: String, month: Int, year: Int) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(isLoading = true, errorMessage = null, isSessionExpired = false)
+                it.copy(isLoading = true, isSessionExpired = false)
             }
 
             try {
@@ -46,7 +47,8 @@ class DespesasViewModel(
                         categoriesMap = categories.categories.associate { category ->
                             category.id to category.name
                         },
-                        expensesData = expenses.expenses
+                        expensesData = expenses.expenses,
+                        errorMessage = null
                     )
                 }
             } catch (e: SessionExpiredException) {
@@ -57,13 +59,12 @@ class DespesasViewModel(
                 Log.e("API_ERRO", "Falha ao carregar despesas", e)
                 _uiState.update {
                     it.copy(
-                        expensesData = emptyList(),
                         errorMessage = e.userMessageOr("Erro ao carregar despesas")
                     )
                 }
             } finally {
                 _uiState.update {
-                    it.copy(isLoading = false)
+                    it.copy(isLoading = false, hasLoadedOnce = true)
                 }
             }
         }

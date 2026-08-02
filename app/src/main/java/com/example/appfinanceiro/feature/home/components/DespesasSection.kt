@@ -20,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,7 +27,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.components.ExpenseCard
 import com.example.appfinanceiro.core.designsystem.components.ExpenseCardStyle
+import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 import com.example.appfinanceiro.core.network.Expense
@@ -43,6 +42,7 @@ import com.example.appfinanceiro.core.network.Expense
 @Composable
 fun DespesasHeaderSection(
     isLoading: Boolean,
+    hasLoadedOnce: Boolean,
     errorMessage: String?,
     onRetry: () -> Unit,
     expenses: List<Expense>,
@@ -59,10 +59,7 @@ fun DespesasHeaderSection(
     val textColor = MaterialTheme.colorScheme.onBackground
     val hasActiveFilters = isCategoryFiltered || isPaymentSourceFiltered
 
-    Column(
-        modifier = Modifier.alpha(if (isLoading && expenses.isNotEmpty()) 0.5f else 1f),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -121,14 +118,14 @@ fun DespesasHeaderSection(
             }
         }
 
-        if (expenses.isEmpty() && isLoading) {
+        if (expenses.isEmpty() && isLoading && !hasLoadedOnce) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(32.dp),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = PrimaryBlue)
+                AppLoadingIndicator(size = 40.dp, strokeWidth = 4.dp)
             }
         } else if (expenses.isEmpty() && errorMessage != null) {
             Column(

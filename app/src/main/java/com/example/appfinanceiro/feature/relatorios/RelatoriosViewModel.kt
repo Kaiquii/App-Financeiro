@@ -27,6 +27,7 @@ data class RelatoriosUiState(
     val isComparisonLoading: Boolean = false,
     val comparisonErrorMessage: String? = null,
     val isLoading: Boolean = true,
+    val hasLoadedOnce: Boolean = false,
     val errorMessage: String? = null,
     val isSessionExpired: Boolean = false
 )
@@ -42,7 +43,7 @@ class RelatoriosViewModel(
     fun loadReports(token: String, month: Int, year: Int) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(isLoading = true, errorMessage = null, isSessionExpired = false)
+                it.copy(isLoading = true, isSessionExpired = false)
             }
 
             try {
@@ -56,7 +57,8 @@ class RelatoriosViewModel(
                         summaryData = summary,
                         categoryData = categories,
                         chartData = chart,
-                        yearlySummary = yearly
+                        yearlySummary = yearly,
+                        errorMessage = null
                     )
                 }
             } catch (e: SessionExpiredException) {
@@ -67,17 +69,12 @@ class RelatoriosViewModel(
                 Log.e("API_ERRO", "Falha ao carregar relatórios", e)
                 _uiState.update {
                     it.copy(
-                        summaryData = null,
-                        categoryData = emptyList(),
-                        chartData = emptyList(),
-                        yearlySummary = null,
-                        monthComparison = null,
                         errorMessage = e.userMessageOr("Erro ao carregar relatórios")
                     )
                 }
             } finally {
                 _uiState.update {
-                    it.copy(isLoading = false)
+                    it.copy(isLoading = false, hasLoadedOnce = true)
                 }
             }
         }

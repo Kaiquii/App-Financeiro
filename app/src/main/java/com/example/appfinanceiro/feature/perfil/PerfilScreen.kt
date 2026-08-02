@@ -84,8 +84,11 @@ import br.com.sobraai.app.BuildConfig
 import com.example.appfinanceiro.core.data.FinanceActionsViewModel
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.data.userMessageOr
+import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
+import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.components.ExitConfirmationDialog
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
+import com.example.appfinanceiro.core.designsystem.components.dataRequestErrorMessage
 import com.example.appfinanceiro.core.designsystem.components.swipeNavigation
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
@@ -136,15 +139,20 @@ fun PerfilScreen(
     var showRemovePhotoDialog by remember { mutableStateOf(false) }
     var showPhotoPreviewDialog by remember { mutableStateOf(false) }
     var isPhotoLoading by remember { mutableStateOf(false) }
+    var isProfileLoading by remember { mutableStateOf(false) }
+    var hasLoadedProfile by remember { mutableStateOf(false) }
+    var profileLoadError by remember { mutableStateOf<String?>(null) }
+    var profileRefreshTrigger by remember { mutableStateOf(0) }
     var localAvatarPreviewUri by remember { mutableStateOf<Uri?>(null) }
     val fullAvatarUrl = remember(userAvatarUrl, userAvatarCacheVersion) {
         buildFullAvatarUrl(userAvatarUrl, userAvatarCacheVersion)
     }
     val avatarImageModel = localAvatarPreviewUri ?: fullAvatarUrl
 
-    LaunchedEffect(userToken) {
+    LaunchedEffect(userToken, profileRefreshTrigger) {
         val token = userToken ?: return@LaunchedEffect
 
+        isProfileLoading = true
         try {
             val profile = actionsViewModel.getProfile(token).user
             sessionManager.saveToken(
@@ -154,8 +162,13 @@ fun PerfilScreen(
                 role = profile.role,
                 avatarUrl = profile.avatar_url
             )
+            profileLoadError = null
         } catch (e: Exception) {
             Log.e("PROFILE_ERRO", "Falha ao carregar perfil", e)
+            profileLoadError = e.userMessageOr("Não foi possível carregar o perfil.")
+        } finally {
+            isProfileLoading = false
+            hasLoadedProfile = true
         }
     }
 
@@ -357,6 +370,9 @@ fun PerfilScreen(
             TopAppBar(
                 title = { Text("Meu perfil", color = textColor, fontWeight = FontWeight.Bold, fontSize = 24.sp) },
                 actions = {
+                    if (isProfileLoading && hasLoadedProfile) {
+                        AppLoadingIndicator(modifier = Modifier.padding(end = 4.dp))
+                    }
                     IconButton(onClick = { showExitDialog = true }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
@@ -383,6 +399,20 @@ fun PerfilScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            profileLoadError?.let { error ->
+                AppDataErrorBanner(
+                    message = dataRequestErrorMessage(
+                        errorMessage = error,
+                        showingPreviousData = userName.isNotBlank() || userEmail.isNotBlank(),
+                        dataLabel = "o perfil"
+                    ),
+                    isRetrying = isProfileLoading,
+                    onRetry = { profileRefreshTrigger++ }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
             ProfileHeader(
                 userName = userName,
                 userEmail = userEmail,

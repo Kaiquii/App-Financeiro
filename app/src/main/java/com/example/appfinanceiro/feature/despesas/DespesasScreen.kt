@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,11 +57,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
+import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.components.ExpenseDetailsDialog
 import com.example.appfinanceiro.core.designsystem.components.ExpenseCard
 import com.example.appfinanceiro.core.designsystem.components.ExpenseCardStyle
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.designsystem.components.swipeNavigation
+import com.example.appfinanceiro.core.designsystem.components.dataRequestErrorMessage
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextMuted
@@ -150,6 +152,13 @@ fun DespesasScreen(
         selectedFilter = selectedFilter
     )
     val selectedFilterCount = expenseCountsByFilter[selectedFilter] ?: filteredExpenses.size
+    val expensesErrorBannerMessage = uiState.errorMessage?.let { error ->
+        dataRequestErrorMessage(
+            errorMessage = error,
+            showingPreviousData = uiState.expensesData.isNotEmpty(),
+            dataLabel = "as despesas"
+        )
+    }
 
     Scaffold(
         modifier = Modifier.swipeNavigation(1, onNavigate),
@@ -170,6 +179,11 @@ fun DespesasScreen(
                             tint = textColor,
                             contentDescription = "Voltar"
                         )
+                    }
+                },
+                actions = {
+                    if (uiState.isLoading && uiState.hasLoadedOnce) {
+                        AppLoadingIndicator(modifier = Modifier.padding(end = 16.dp))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
@@ -274,20 +288,35 @@ fun DespesasScreen(
                         currentMonthIndex++
                     }
                 },
-                centerSuffix = if (selectedFilterCount == 1) {
-                    "1 despesa"
-                } else {
-                    "$selectedFilterCount despesas"
+                centerSuffix = when {
+                    uiState.errorMessage != null && uiState.expensesData.isEmpty() -> null
+                    selectedFilterCount == 1 -> "1 despesa"
+                    else -> "$selectedFilterCount despesas"
                 }
             )
 
-            if (uiState.isLoading) {
+            expensesErrorBannerMessage?.let { message ->
+                AppDataErrorBanner(
+                    message = message,
+                    isRetrying = uiState.isLoading,
+                    onRetry = {
+                        userToken?.let { token ->
+                            viewModel.loadExpenses(token, currentMonthIndex + 1, currentYear)
+                        }
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+
+            if (uiState.isLoading && !uiState.hasLoadedOnce) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = PrimaryBlue)
+                    AppLoadingIndicator(size = 40.dp, strokeWidth = 4.dp)
                 }
+            } else if (uiState.errorMessage != null && uiState.expensesData.isEmpty()) {
+                Spacer(modifier = Modifier.fillMaxSize())
             } else if (filteredExpenses.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
