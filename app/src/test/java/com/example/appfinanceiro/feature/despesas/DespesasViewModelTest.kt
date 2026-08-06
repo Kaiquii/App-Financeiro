@@ -46,16 +46,43 @@ class DespesasViewModelTest {
         assertFalse(viewModel.uiState.value.isDeleting)
     }
 
+    @Test
+    fun updatesOnlyTheSelectedExpensePaymentStatus() = runTest(mainDispatcherRule.testDispatcher) {
+        val dataSource = FakeExpensesDataSource()
+        val viewModel = DespesasViewModel(dataSource)
+        var callbackCalled = false
+
+        viewModel.loadExpenses("token", 7, 2026)
+        advanceUntilIdle()
+        val expense = viewModel.uiState.value.expensesData.single()
+
+        viewModel.updateExpensePaymentStatus("token", expense, true) { callbackCalled = true }
+        advanceUntilIdle()
+
+        assertEquals(7, dataSource.paymentStatusUpdatedId)
+        assertEquals(true, dataSource.paymentStatusUpdatedToPaid)
+        assertTrue(viewModel.uiState.value.expensesData.single().is_paid)
+        assertTrue(callbackCalled)
+        assertFalse(viewModel.uiState.value.isUpdatingPaymentStatus)
+    }
+
     private class FakeExpensesDataSource : ExpensesDataSource {
         var deletedId: Int? = null
         var deletedFuture: Boolean? = null
+        var paymentStatusUpdatedId: Int? = null
+        var paymentStatusUpdatedToPaid: Boolean? = null
 
         override suspend fun getCategories(token: String) = CategoriesResponse(
             categories = listOf(Category(1, name = "Casa")),
             total = 1
         )
 
-        override suspend fun getExpenses(token: String, month: Int, year: Int) = ExpensesResponse(
+        override suspend fun getExpenses(
+            token: String,
+            month: Int,
+            year: Int,
+            paymentStatus: String?
+        ) = ExpensesResponse(
             expenses = listOf(
                 Expense(
                     id = 7,
@@ -80,6 +107,19 @@ class DespesasViewModelTest {
             deletedId = id
             deletedFuture = deleteFuture
             return DefaultResponse("ok")
+        }
+
+        override suspend fun updateExpensePaymentStatus(
+            token: String,
+            id: Int,
+            isPaid: Boolean
+        ): ExpensePaymentStatusResponse {
+            paymentStatusUpdatedId = id
+            paymentStatusUpdatedToPaid = isPaid
+            return ExpensePaymentStatusResponse(
+                message = "Status de pagamento atualizado com sucesso!",
+                expense = getExpenses(token, 7, 2026, null).expenses.single().copy(is_paid = isPaid)
+            )
         }
     }
 }

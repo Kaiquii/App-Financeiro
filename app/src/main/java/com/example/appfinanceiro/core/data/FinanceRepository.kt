@@ -67,12 +67,18 @@ class FinanceRepository : HomeDataSource, ExpensesDataSource, ReportsDataSource,
         }
     }
 
-    override suspend fun getExpenses(token: String, month: Int, year: Int): ExpensesResponse {
+    override suspend fun getExpenses(
+        token: String,
+        month: Int,
+        year: Int,
+        paymentStatus: String?
+    ): ExpensesResponse {
         return authorizedRequest {
             RetrofitClient.financeApi.getExpenses(
                 token = bearer(token),
                 month = month,
-                year = year
+                year = year,
+                paymentStatus = paymentStatus
             )
         }
     }
@@ -97,6 +103,20 @@ class FinanceRepository : HomeDataSource, ExpensesDataSource, ReportsDataSource,
                 token = bearer(token),
                 id = id,
                 deleteFuture = deleteFuture
+            )
+        }
+    }
+
+    override suspend fun updateExpensePaymentStatus(
+        token: String,
+        id: Int,
+        isPaid: Boolean
+    ): ExpensePaymentStatusResponse {
+        return authorizedRequest {
+            RetrofitClient.financeApi.updateExpensePaymentStatus(
+                token = bearer(token),
+                id = id,
+                request = ExpensePaymentStatusRequest(isPaid = isPaid)
             )
         }
     }

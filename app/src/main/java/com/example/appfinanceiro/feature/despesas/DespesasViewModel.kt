@@ -19,9 +19,12 @@ data class DespesasUiState(
     val isLoading: Boolean = true,
     val hasLoadedOnce: Boolean = false,
     val isDeleting: Boolean = false,
+    val isUpdatingPaymentStatus: Boolean = false,
     val errorMessage: String? = null,
     val deleteSuccessMessage: String? = null,
     val deleteErrorMessage: String? = null,
+    val paymentStatusSuccessMessage: String? = null,
+    val paymentStatusErrorMessage: String? = null,
     val isSessionExpired: Boolean = false
 )
 
@@ -32,7 +35,7 @@ class DespesasViewModel(
     private val _uiState = MutableStateFlow(DespesasUiState())
     val uiState: StateFlow<DespesasUiState> = _uiState
 
-    fun loadExpenses(token: String, month: Int, year: Int) {
+    fun loadExpenses(token: String, month: Int, year: Int, paymentStatus: String? = null) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(isLoading = true, isSessionExpired = false)
@@ -40,7 +43,7 @@ class DespesasViewModel(
 
             try {
                 val categories = repository.getCategories(token)
-                val expenses = repository.getExpenses(token, month, year)
+                val expenses = repository.getExpenses(token, month, year, paymentStatus)
 
                 _uiState.update {
                     it.copy(
@@ -108,9 +111,57 @@ class DespesasViewModel(
         }
     }
 
+    fun updateExpensePaymentStatus(
+        token: String,
+        expense: Expense,
+        isPaid: Boolean,
+        onUpdated: () -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isUpdatingPaymentStatus = true,
+                    paymentStatusSuccessMessage = null,
+                    paymentStatusErrorMessage = null
+                )
+            }
+
+            try {
+                val response = repository.updateExpensePaymentStatus(token, expense.id, isPaid)
+                _uiState.update { state ->
+                    state.copy(
+                        expensesData = state.expensesData.map { currentExpense ->
+                            if (currentExpense.id == expense.id) response.expense else currentExpense
+                        },
+                        paymentStatusSuccessMessage = response.message
+                    )
+                }
+                onUpdated()
+            } catch (e: SessionExpiredException) {
+                _uiState.update { it.copy(isSessionExpired = true) }
+            } catch (e: Exception) {
+                Log.e("API_ERRO", "Falha ao atualizar status de pagamento", e)
+                _uiState.update {
+                    it.copy(
+                        paymentStatusErrorMessage = e.userMessageOr(
+                            "Não foi possível atualizar o status de pagamento."
+                        )
+                    )
+                }
+            } finally {
+                _uiState.update { it.copy(isUpdatingPaymentStatus = false) }
+            }
+        }
+    }
+
     fun clearMessages() {
         _uiState.update {
-            it.copy(deleteSuccessMessage = null, deleteErrorMessage = null)
+            it.copy(
+                deleteSuccessMessage = null,
+                deleteErrorMessage = null,
+                paymentStatusSuccessMessage = null,
+                paymentStatusErrorMessage = null
+            )
         }
     }
 

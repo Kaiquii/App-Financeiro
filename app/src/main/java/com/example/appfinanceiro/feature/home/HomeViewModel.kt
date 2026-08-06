@@ -39,10 +39,10 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
 
-    fun loadAll(token: String, month: Int, year: Int) {
+    fun loadAll(token: String, month: Int, year: Int, paymentStatus: String? = null) {
         loadSummary(token, month, year)
         loadIncomes(token, month, year)
-        loadExpenses(token, month, year)
+        loadExpenses(token, month, year, paymentStatus)
     }
 
     fun loadSummary(token: String, month: Int, year: Int) {
@@ -112,7 +112,7 @@ class HomeViewModel(
         }
     }
 
-    fun loadExpenses(token: String, month: Int, year: Int) {
+    fun loadExpenses(token: String, month: Int, year: Int, paymentStatus: String? = null) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(isExpensesLoading = true, isSessionExpired = false)
@@ -120,7 +120,7 @@ class HomeViewModel(
 
             try {
                 val categories = repository.getCategories(token)
-                val expenses = repository.getExpenses(token, month, year)
+                val expenses = repository.getExpenses(token, month, year, paymentStatus)
 
                 _uiState.update {
                     it.copy(

@@ -67,7 +67,12 @@ class HomeViewModelTest {
             total = 1
         )
 
-        override suspend fun getExpenses(token: String, month: Int, year: Int) = ExpensesResponse(
+        override suspend fun getExpenses(
+            token: String,
+            month: Int,
+            year: Int,
+            paymentStatus: String?
+        ) = ExpensesResponse(
             expenses = listOf(
                 Expense(
                     id = 1,

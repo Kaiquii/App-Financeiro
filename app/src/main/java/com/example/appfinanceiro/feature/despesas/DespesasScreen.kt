@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -31,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -66,6 +68,7 @@ import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.designsystem.components.swipeNavigation
 import com.example.appfinanceiro.core.designsystem.components.dataRequestErrorMessage
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
+import com.example.appfinanceiro.core.designsystem.theme.GreenPositive
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 import com.example.appfinanceiro.core.network.Expense
@@ -102,6 +105,8 @@ fun DespesasScreen(
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedFilter by rememberSaveable { mutableStateOf("Todas") }
+    var selectedPaymentStatus by rememberSaveable { mutableStateOf<String?>(null) }
+    var showPaymentStatusFilterModal by remember { mutableStateOf(false) }
 
     val calendar = remember { Calendar.getInstance() }
     var currentMonthIndex by rememberSaveable {
@@ -113,10 +118,16 @@ fun DespesasScreen(
 
     var expenseToDelete by remember { mutableStateOf<Expense?>(null) }
     var expenseToView by remember { mutableStateOf<Expense?>(null) }
+    var expensePaymentStatusToChange by remember { mutableStateOf<Expense?>(null) }
 
-    LaunchedEffect(currentMonthIndex, currentYear, userToken, refreshTrigger) {
+    LaunchedEffect(currentMonthIndex, currentYear, userToken, refreshTrigger, selectedPaymentStatus) {
         userToken?.let { token ->
-            viewModel.loadExpenses(token, currentMonthIndex + 1, currentYear)
+            viewModel.loadExpenses(
+                token,
+                currentMonthIndex + 1,
+                currentYear,
+                selectedPaymentStatus
+            )
         }
     }
 
@@ -128,13 +139,28 @@ fun DespesasScreen(
         }
     }
 
-    LaunchedEffect(uiState.deleteSuccessMessage, uiState.deleteErrorMessage) {
+    LaunchedEffect(
+        uiState.deleteSuccessMessage,
+        uiState.deleteErrorMessage,
+        uiState.paymentStatusSuccessMessage,
+        uiState.paymentStatusErrorMessage
+    ) {
         uiState.deleteSuccessMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearMessages()
         }
 
         uiState.deleteErrorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessages()
+        }
+
+        uiState.paymentStatusSuccessMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessages()
+        }
+
+        uiState.paymentStatusErrorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearMessages()
         }
@@ -228,6 +254,27 @@ fun DespesasScreen(
                         tint = secondaryTextColor,
                         contentDescription = null
                     )
+                },
+                trailingIcon = {
+                    IconButton(onClick = { showPaymentStatusFilterModal = true }) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Filtrar status de pagamento: ${
+                                when (selectedPaymentStatus) {
+                                    "paid" -> "Pagas"
+                                    "pending" -> "Pendentes"
+                                    else -> "Todas"
+                                }
+                            }",
+                            tint = if (selectedPaymentStatus == null) {
+                                secondaryTextColor
+                            } else if (selectedPaymentStatus == "paid") {
+                                GreenPositive
+                            } else {
+                                PrimaryBlue
+                            }
+                        )
+                    }
                 },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = inputBgColor,
@@ -341,7 +388,12 @@ fun DespesasScreen(
                     isRetrying = uiState.isLoading,
                     onRetry = {
                         userToken?.let { token ->
-                            viewModel.loadExpenses(token, currentMonthIndex + 1, currentYear)
+                            viewModel.loadExpenses(
+                                token,
+                                currentMonthIndex + 1,
+                                currentYear,
+                                selectedPaymentStatus
+                            )
                         }
                     },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -379,7 +431,8 @@ fun DespesasScreen(
                             categoriesMap = uiState.categoriesMap,
                             onView = { expenseToView = expense },
                             onEdit = { onEditClick(expense.id) },
-                            onDelete = { expenseToDelete = expense }
+                            onDelete = { expenseToDelete = expense },
+                            onPaymentStatusClick = { expensePaymentStatusToChange = expense }
                         )
                     }
                 }
@@ -483,6 +536,113 @@ fun DespesasScreen(
         )
     }
 
+    expensePaymentStatusToChange?.let { expense ->
+        val markingAsPaid = !expense.is_paid
+        AlertDialog(
+            onDismissRequest = {
+                if (!uiState.isUpdatingPaymentStatus) expensePaymentStatusToChange = null
+            },
+            containerColor = backgroundColor,
+            title = {
+                Text(
+                    text = if (markingAsPaid) "Marcar como paga?" else "Desmarcar como paga?",
+                    color = textColor,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = if (markingAsPaid) {
+                        "Confirma que \"${expense.description}\" foi paga?"
+                    } else {
+                        "Confirma que deseja desmarcar \"${expense.description}\" como paga?"
+                    },
+                    color = secondaryTextColor
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val token = userToken ?: return@TextButton
+                        viewModel.updateExpensePaymentStatus(
+                            token = token,
+                            expense = expense,
+                            isPaid = markingAsPaid,
+                            onUpdated = { expensePaymentStatusToChange = null }
+                        )
+                    },
+                    enabled = !uiState.isUpdatingPaymentStatus
+                ) {
+                    Text(
+                        text = if (uiState.isUpdatingPaymentStatus) {
+                            "Atualizando..."
+                        } else if (markingAsPaid) {
+                            "Marcar como paga"
+                        } else {
+                            "Desmarcar"
+                        },
+                        color = if (markingAsPaid) GreenPositive else PrimaryBlue,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { expensePaymentStatusToChange = null },
+                    enabled = !uiState.isUpdatingPaymentStatus
+                ) {
+                    Text("Cancelar", color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    if (showPaymentStatusFilterModal) {
+        ModalBottomSheet(
+            onDismissRequest = { showPaymentStatusFilterModal = false },
+            containerColor = backgroundColor
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp, start = 24.dp, end = 24.dp)
+            ) {
+                Text(
+                    text = "Filtrar por Status",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                PaymentStatusFilterOption(
+                    label = "Todas",
+                    isSelected = selectedPaymentStatus == null,
+                    onClick = {
+                        selectedPaymentStatus = null
+                        showPaymentStatusFilterModal = false
+                    }
+                )
+                PaymentStatusFilterOption(
+                    label = "Pendentes",
+                    isSelected = selectedPaymentStatus == "pending",
+                    onClick = {
+                        selectedPaymentStatus = "pending"
+                        showPaymentStatusFilterModal = false
+                    }
+                )
+                PaymentStatusFilterOption(
+                    label = "Pagas",
+                    isSelected = selectedPaymentStatus == "paid",
+                    onClick = {
+                        selectedPaymentStatus = "paid"
+                        showPaymentStatusFilterModal = false
+                    }
+                )
+            }
+        }
+    }
+
     expenseToView?.let { expense ->
         ExpenseDetailsDialog(
             expense = expense,
@@ -493,12 +653,37 @@ fun DespesasScreen(
 }
 
 @Composable
+private fun PaymentStatusFilterOption(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = if (isSelected) PrimaryBlue.copy(alpha = 0.16f) else Color.Transparent,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 14.dp)
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) PrimaryBlue else MaterialTheme.colorScheme.onBackground,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}
+
+@Composable
 fun DespesaListItem(
     expense: Expense,
     categoriesMap: Map<Int, String>,
     onView: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onPaymentStatusClick: () -> Unit
 ) {
     val dateFormat = remember { SimpleDateFormat("dd/MM", Locale("pt", "BR")) }
     val formattedDate = try {
@@ -535,8 +720,10 @@ fun DespesaListItem(
         date = formattedDate,
         value = "- $formattedAmount",
         notes = expense.notes,
+        isPaid = expense.is_paid,
         onView = onView,
         onEdit = onEdit,
-        onDelete = onDelete
+        onDelete = onDelete,
+        onPaymentStatusClick = onPaymentStatusClick
     )
 }

@@ -44,6 +44,11 @@ fun ExpenseDetailsDialog(
     val currencyFormatter = remember { NumberFormat.getCurrencyInstance(Locale("pt", "BR")) }
     val formattedAmount = remember(expense.amount) { currencyFormatter.format(expense.amount) }
     val formattedDate = remember(expense.date) { formatExpenseDetailsDate(expense.date) }
+    val paidAtLabel = remember(expense.is_paid, expense.paid_at) {
+        expense.paid_at
+            ?.takeIf { expense.is_paid }
+            ?.let(::formatExpensePaidAt)
+    }
     val typeLabel = remember(expense.type, expense.current_installment, expense.installments) {
         when {
             expense.type.equals("Parcelada", ignoreCase = true) &&
@@ -85,6 +90,7 @@ fun ExpenseDetailsDialog(
                 DetailsGroup(
                     paymentSource = expense.payment_source ?: "Não informado",
                     date = formattedDate,
+                    paidAtLabel = paidAtLabel,
                     textColor = dialogTextColor
                 )
 
@@ -169,7 +175,12 @@ private fun DetailChip(text: String) {
 }
 
 @Composable
-private fun DetailsGroup(paymentSource: String, date: String, textColor: Color) {
+private fun DetailsGroup(
+    paymentSource: String,
+    date: String,
+    paidAtLabel: String?,
+    textColor: Color
+) {
     val blockColor = MaterialTheme.colorScheme.expenseDetailBlock
 
     Column(
@@ -185,6 +196,10 @@ private fun DetailsGroup(paymentSource: String, date: String, textColor: Color) 
         DetailLine(label = "Origem", value = paymentSource, textColor = textColor)
         HorizontalDivider(color = textColor.copy(alpha = 0.08f))
         DetailLine(label = "Data", value = date, textColor = textColor)
+        paidAtLabel?.let { label ->
+            HorizontalDivider(color = textColor.copy(alpha = 0.08f))
+            DetailLine(label = "Pago em", value = label, textColor = textColor)
+        }
     }
 }
 
@@ -261,4 +276,18 @@ private fun formatExpenseDetailsDate(dateString: String): String {
     } catch (e: Exception) {
         dateString
     }
+}
+
+private fun formatExpensePaidAt(dateString: String): String {
+    val datePart = dateString.substringBefore('T').substringBefore(' ')
+    val formattedDate = datePart.split('-').let { parts ->
+        if (parts.size == 3 && parts.all { it.isNotBlank() }) {
+            "${parts[2]}/${parts[1]}/${parts[0]}"
+        } else {
+            datePart
+        }
+    }
+
+    val time = Regex("[T ](\\d{2}:\\d{2})").find(dateString)?.groupValues?.get(1)
+    return time?.let { "$formattedDate às $it" } ?: formattedDate
 }

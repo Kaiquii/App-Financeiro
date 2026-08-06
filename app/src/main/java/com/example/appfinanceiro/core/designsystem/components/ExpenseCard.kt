@@ -1,6 +1,7 @@
 package com.example.appfinanceiro.core.designsystem.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
@@ -54,9 +56,11 @@ fun ExpenseCard(
     date: String,
     value: String,
     notes: String?,
+    isPaid: Boolean = false,
     onView: () -> Unit,
     onEdit: (() -> Unit)? = null,
-    onDelete: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null,
+    onPaymentStatusClick: (() -> Unit)? = null
 ) {
     when (style) {
         ExpenseCardStyle.Compact -> CompactExpenseCard(
@@ -69,6 +73,7 @@ fun ExpenseCard(
             date = date,
             value = value,
             notes = notes,
+            isPaid = isPaid,
             onView = onView
         )
 
@@ -82,9 +87,11 @@ fun ExpenseCard(
             date = date,
             value = value,
             notes = notes,
+            isPaid = isPaid,
             onView = onView,
             onEdit = onEdit ?: {},
-            onDelete = onDelete ?: {}
+            onDelete = onDelete ?: {},
+            onPaymentStatusClick = onPaymentStatusClick
         )
     }
 }
@@ -100,6 +107,7 @@ private fun CompactExpenseCard(
     date: String,
     value: String,
     notes: String?,
+    isPaid: Boolean,
     onView: () -> Unit
 ) {
     val textColor = MaterialTheme.colorScheme.onBackground
@@ -153,6 +161,10 @@ private fun CompactExpenseCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 MiniChip(label = type, color = TextMuted)
+                if (isPaid) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    MiniChip(label = "Paga", color = GreenPositive)
+                }
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = date,
@@ -230,9 +242,11 @@ private fun DetailedExpenseCard(
     date: String,
     value: String,
     notes: String?,
+    isPaid: Boolean,
     onView: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onPaymentStatusClick: (() -> Unit)?
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val cardBg = colorScheme.surface
@@ -292,6 +306,10 @@ private fun DetailedExpenseCard(
                     ) {
                         Text(text = type, color = TextMuted, fontSize = 10.sp)
                     }
+                    if (isPaid) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        MiniChip(label = "Paga", color = GreenPositive)
+                    }
                     Text(
                         text = " • $date",
                         color = secondaryColor,
@@ -309,6 +327,42 @@ private fun DetailedExpenseCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 Row {
+                    onPaymentStatusClick?.let { onClick ->
+                        Box(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .then(
+                                    if (isPaid) {
+                                        Modifier.background(GreenPositive, CircleShape)
+                                    } else {
+                                        Modifier
+                                            .border(
+                                                width = 1.dp,
+                                                color = secondaryColor.copy(alpha = 0.7f),
+                                                shape = CircleShape
+                                            )
+                                            .background(
+                                                secondaryColor.copy(alpha = 0.08f),
+                                                CircleShape
+                                            )
+                                    }
+                                )
+                                .clickable { onClick() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = if (isPaid) {
+                                    "Desmarcar despesa como paga"
+                                } else {
+                                    "Marcar despesa como paga"
+                                },
+                                tint = if (isPaid) Color.White else secondaryColor,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                    }
                     Box(
                         modifier = Modifier
                             .size(18.dp)

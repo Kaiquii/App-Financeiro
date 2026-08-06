@@ -49,7 +49,9 @@ data class Expense(
     val installments: Int?,
     val current_installment: Int?,
     val payment_source: String?,
-    val notes: String? = null
+    val notes: String? = null,
+    val is_paid: Boolean = false,
+    val paid_at: String? = null
 )
 data class ExpensesResponse(val expenses: List<Expense>, val total: Int)
 
@@ -157,6 +159,15 @@ data class ExpenseUpdateRequest(
     val date: String? = null,
     val notes: String? = null,
     val update_future: Boolean? = null
+)
+
+data class ExpensePaymentStatusRequest(
+    @SerializedName("is_paid") val isPaid: Boolean
+)
+
+data class ExpensePaymentStatusResponse(
+    val message: String,
+    val expense: Expense
 )
 
 data class UpdateProfileRequest(
@@ -389,7 +400,8 @@ interface FinanceApi {
     suspend fun getExpenses(
         @Header("Authorization") token: String,
         @Query("month") month: Int,
-        @Query("year") year: Int
+        @Query("year") year: Int,
+        @Query("payment_status") paymentStatus: String? = null
     ): ExpensesResponse
 
     @GET("api/incomes/")
@@ -411,6 +423,13 @@ interface FinanceApi {
         @retrofit2.http.Path("id") id: Int,
         @retrofit2.http.Body request: ExpenseUpdateRequest
     ): DefaultResponse
+
+    @retrofit2.http.PATCH("api/expenses/{id}/payment-status")
+    suspend fun updateExpensePaymentStatus(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Path("id") id: Int,
+        @retrofit2.http.Body request: ExpensePaymentStatusRequest
+    ): ExpensePaymentStatusResponse
 
     @retrofit2.http.DELETE("api/expenses/{id}")
     suspend fun deleteExpense(

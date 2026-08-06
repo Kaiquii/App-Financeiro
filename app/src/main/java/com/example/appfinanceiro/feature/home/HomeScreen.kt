@@ -115,9 +115,11 @@ fun HomeScreen(
 
     var showCategoryFilterModal by remember { mutableStateOf(false) }
     var showPaymentSourceFilterModal by remember { mutableStateOf(false) }
+    var showPaymentStatusFilterModal by remember { mutableStateOf(false) }
     var expenseToView by remember { mutableStateOf<Expense?>(null) }
     var selectedCategoryId by rememberSaveable { mutableStateOf<Int?>(null) }
     var selectedPaymentSource by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedPaymentStatus by rememberSaveable { mutableStateOf<String?>(null) }
     var showExitDialog by remember { mutableStateOf(false) }
 
     var refreshIncomeActions by remember { mutableIntStateOf(0) }
@@ -127,6 +129,11 @@ fun HomeScreen(
         "Adiantamento" -> "Adiantamento"
         "Renda Extra" -> "Renda Extra"
         else -> null
+    }
+    val selectedPaymentStatusName = when (selectedPaymentStatus) {
+        "paid" -> "Pagas"
+        "pending" -> "Pendentes"
+        else -> "Todas"
     }
 
     val filteredExpenses = uiState.expensesData.filter { expense ->
@@ -197,7 +204,12 @@ fun HomeScreen(
 
     LaunchedEffect(currentMonthIndex, currentYear, userToken, refreshIncomeActions) {
         userToken?.let { token ->
-            viewModel.loadAll(token, currentMonthIndex + 1, currentYear)
+            viewModel.loadAll(
+                token,
+                currentMonthIndex + 1,
+                currentYear,
+                selectedPaymentStatus
+            )
         }
     }
 
@@ -277,7 +289,12 @@ fun HomeScreen(
                         isRetrying = isLoadingMonth,
                         onRetry = {
                             userToken?.let { token ->
-                                viewModel.loadAll(token, currentMonthIndex + 1, currentYear)
+                                viewModel.loadAll(
+                                    token,
+                                    currentMonthIndex + 1,
+                                    currentYear,
+                                    selectedPaymentStatus
+                                )
                             }
                         }
                     )
@@ -312,18 +329,32 @@ fun HomeScreen(
                     errorMessage = uiState.expensesError,
                     onRetry = {
                         userToken?.let { token ->
-                            viewModel.loadExpenses(token, currentMonthIndex + 1, currentYear)
+                            viewModel.loadExpenses(
+                                token,
+                                currentMonthIndex + 1,
+                                currentYear,
+                                selectedPaymentStatus
+                            )
                         }
                     },
                     expenses = filteredExpenses,
                     onCategoryFilterClick = { showCategoryFilterModal = true },
                     onPaymentSourceFilterClick = { showPaymentSourceFilterModal = true },
+                    onPaymentStatusFilterClick = { showPaymentStatusFilterModal = true },
                     isCategoryFiltered = selectedCategoryId != null,
                     isPaymentSourceFiltered = selectedPaymentSource != null,
+                    isPaymentStatusFiltered = selectedPaymentStatus != null,
                     selectedCategoryName = selectedCategoryName,
                     selectedPaymentSourceName = selectedPaymentSourceName,
+                    selectedPaymentStatusName = selectedPaymentStatusName,
                     onClearCategoryFilter = { selectedCategoryId = null },
                     onClearPaymentSourceFilter = { selectedPaymentSource = null },
+                    onClearPaymentStatusFilter = {
+                        selectedPaymentStatus = null
+                        userToken?.let { token ->
+                            viewModel.loadExpenses(token, currentMonthIndex + 1, currentYear)
+                        }
+                    },
                     onAddClick = onAddClick
                 )
             }
@@ -357,6 +388,7 @@ fun HomeScreen(
                     date = formattedDate,
                     value = "- ${formatCurrency(expense.amount)}",
                     notes = expense.notes,
+                    isPaid = expense.is_paid,
                     onViewClick = { expenseToView = expense }
                 )
             }
@@ -477,6 +509,47 @@ fun HomeScreen(
                         showPaymentSourceFilterModal = false
                     }
                 )
+            }
+        }
+    }
+
+    if (showPaymentStatusFilterModal) {
+        ModalBottomSheet(
+            onDismissRequest = { showPaymentStatusFilterModal = false },
+            containerColor = backgroundColor
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp, start = 24.dp, end = 24.dp)
+            ) {
+                Text(
+                    text = "Filtrar por Status",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                listOf(null to "Todas", "pending" to "Pendentes", "paid" to "Pagas")
+                    .forEach { (status, label) ->
+                        FilterOptionItem(
+                            label = label,
+                            isSelected = selectedPaymentStatus == status,
+                            onClick = {
+                                selectedPaymentStatus = status
+                                showPaymentStatusFilterModal = false
+                                userToken?.let { token ->
+                                    viewModel.loadExpenses(
+                                        token,
+                                        currentMonthIndex + 1,
+                                        currentYear,
+                                        status
+                                    )
+                                }
+                            }
+                        )
+                    }
             }
         }
     }

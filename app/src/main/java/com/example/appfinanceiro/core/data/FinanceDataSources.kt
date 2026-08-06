@@ -8,6 +8,7 @@ import com.example.appfinanceiro.core.network.CategoryReportResponse
 import com.example.appfinanceiro.core.network.ChartReportResponse
 import com.example.appfinanceiro.core.network.DefaultResponse
 import com.example.appfinanceiro.core.network.ExpensesResponse
+import com.example.appfinanceiro.core.network.ExpensePaymentStatusResponse
 import com.example.appfinanceiro.core.network.IncomesResponse
 import com.example.appfinanceiro.core.network.InstallmentCommitmentsResponse
 import com.example.appfinanceiro.core.network.MonthComparisonResponse
@@ -18,13 +19,28 @@ interface HomeDataSource {
     suspend fun getSummary(token: String, month: Int, year: Int): SummaryResponse
     suspend fun getIncomes(token: String, month: Int? = null, year: Int? = null): IncomesResponse
     suspend fun getCategories(token: String): CategoriesResponse
-    suspend fun getExpenses(token: String, month: Int, year: Int): ExpensesResponse
+    suspend fun getExpenses(
+        token: String,
+        month: Int,
+        year: Int,
+        paymentStatus: String?
+    ): ExpensesResponse
 }
 
 interface ExpensesDataSource {
     suspend fun getCategories(token: String): CategoriesResponse
-    suspend fun getExpenses(token: String, month: Int, year: Int): ExpensesResponse
+    suspend fun getExpenses(
+        token: String,
+        month: Int,
+        year: Int,
+        paymentStatus: String?
+    ): ExpensesResponse
     suspend fun deleteExpense(token: String, id: Int, deleteFuture: Boolean? = null): DefaultResponse
+    suspend fun updateExpensePaymentStatus(
+        token: String,
+        id: Int,
+        isPaid: Boolean
+    ): ExpensePaymentStatusResponse
 }
 
 interface ReportsDataSource {

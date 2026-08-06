@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,51 +49,63 @@ fun DespesasHeaderSection(
     expenses: List<Expense>,
     onCategoryFilterClick: () -> Unit,
     onPaymentSourceFilterClick: () -> Unit,
+    onPaymentStatusFilterClick: () -> Unit,
     isCategoryFiltered: Boolean,
     isPaymentSourceFiltered: Boolean,
+    isPaymentStatusFiltered: Boolean,
     selectedCategoryName: String?,
     selectedPaymentSourceName: String?,
+    selectedPaymentStatusName: String,
     onClearCategoryFilter: () -> Unit,
     onClearPaymentSourceFilter: () -> Unit,
+    onClearPaymentStatusFilter: () -> Unit,
     onAddClick: () -> Unit
 ) {
     val textColor = MaterialTheme.colorScheme.onBackground
-    val hasActiveFilters = isCategoryFiltered || isPaymentSourceFiltered
+    val hasActiveFilters =
+        isCategoryFiltered || isPaymentSourceFiltered || isPaymentStatusFiltered
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = "Despesas",
-                    color = textColor,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            Text(
+                text = "Despesas",
+                color = textColor,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
 
-                ExpenseCountLabel(count = expenses.size)
-            }
+            Spacer(modifier = Modifier.width(8.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterButton(
-                    label = "Origem",
-                    isActive = isPaymentSourceFiltered,
-                    icon = Icons.Default.AccountBalanceWallet,
-                    onClick = onPaymentSourceFilterClick
-                )
+            ExpenseCountLabel(count = expenses.size)
+        }
 
-                FilterButton(
-                    label = "Categoria",
-                    isActive = isCategoryFiltered,
-                    icon = Icons.Default.FilterList,
-                    onClick = onCategoryFilterClick
-                )
-            }
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterButton(
+                label = "Origem",
+                isActive = isPaymentSourceFiltered,
+                icon = Icons.Default.AccountBalanceWallet,
+                onClick = onPaymentSourceFilterClick
+            )
+
+            FilterButton(
+                label = "Categoria",
+                isActive = isCategoryFiltered,
+                icon = Icons.Default.FilterList,
+                onClick = onCategoryFilterClick
+            )
+
+            FilterButton(
+                label = "Status: $selectedPaymentStatusName",
+                isActive = isPaymentStatusFiltered,
+                icon = Icons.Default.CheckCircle,
+                onClick = onPaymentStatusFilterClick
+            )
         }
 
         if (hasActiveFilters) {
@@ -113,6 +126,13 @@ fun DespesasHeaderSection(
                     ActiveFilterChip(
                         label = "Categoria: $selectedCategoryName",
                         onClear = onClearCategoryFilter
+                    )
+                }
+
+                if (isPaymentStatusFiltered) {
+                    ActiveFilterChip(
+                        label = "Status: $selectedPaymentStatusName",
+                        onClear = onClearPaymentStatusFilter
                     )
                 }
             }
@@ -220,6 +240,7 @@ private fun FilterButton(
     label: String,
     isActive: Boolean,
     icon: ImageVector,
+    activeColor: Color = PrimaryBlue,
     onClick: () -> Unit
 ) {
     val cardBg = MaterialTheme.colorScheme.surface
@@ -227,7 +248,7 @@ private fun FilterButton(
     Row(
         modifier = Modifier
             .background(
-                if (isActive) PrimaryBlue.copy(alpha = 0.2f) else cardBg,
+                if (isActive) activeColor.copy(alpha = 0.2f) else cardBg,
                 RoundedCornerShape(16.dp)
             )
             .clickable { onClick() }
@@ -237,7 +258,7 @@ private fun FilterButton(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (isActive) PrimaryBlue else TextMuted,
+            tint = if (isActive) activeColor else TextMuted,
             modifier = Modifier.size(16.dp)
         )
 
@@ -245,7 +266,7 @@ private fun FilterButton(
 
         Text(
             text = label,
-            color = if (isActive) PrimaryBlue else TextMuted,
+            color = if (isActive) activeColor else TextMuted,
             fontSize = 12.sp
         )
     }
@@ -254,18 +275,19 @@ private fun FilterButton(
 @Composable
 private fun ActiveFilterChip(
     label: String,
+    color: Color = PrimaryBlue,
     onClear: () -> Unit
 ) {
     Row(
         modifier = Modifier
-            .background(PrimaryBlue.copy(alpha = 0.14f), RoundedCornerShape(14.dp))
+            .background(color.copy(alpha = 0.14f), RoundedCornerShape(14.dp))
             .clickable { onClear() }
             .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = label,
-            color = PrimaryBlue,
+            color = color,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -274,7 +296,7 @@ private fun ActiveFilterChip(
 
         Text(
             text = "x",
-            color = PrimaryBlue,
+            color = color,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold
         )
@@ -292,6 +314,7 @@ fun ExpenseItem(
     date: String,
     value: String,
     notes: String?,
+    isPaid: Boolean,
     onViewClick: () -> Unit
 ) {
     ExpenseCard(
@@ -305,6 +328,7 @@ fun ExpenseItem(
         date = date,
         value = value,
         notes = notes,
+        isPaid = isPaid,
         onView = onViewClick
     )
 }
