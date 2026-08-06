@@ -53,6 +53,9 @@ fun expenseCountsByFilter(
     }
 }
 
+fun totalExpenseAmount(expenses: List<Expense>): Double =
+    expenses.sumOf { expense -> expense.amount }
+
 private fun normalizeAmountSearchText(value: String): String {
     return value
         .lowercase(Locale.forLanguageTag("pt-BR"))

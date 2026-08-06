@@ -43,6 +43,13 @@ class ExpenseFiltersTest {
         assertEquals(1, result["Fixas"])
     }
 
+    @Test
+    fun totalsOnlyTheExpensesVisibleAfterFiltering() {
+        val filtered = filterExpenses(expenses, "", "Parceladas")
+
+        assertEquals(250.00, totalExpenseAmount(filtered), 0.001)
+    }
+
     private fun expense(id: Int, description: String, amount: Double, type: String) = Expense(
         id = id,
         category_id = 1,

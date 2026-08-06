@@ -152,6 +152,17 @@ fun DespesasScreen(
         selectedFilter = selectedFilter
     )
     val selectedFilterCount = expenseCountsByFilter[selectedFilter] ?: filteredExpenses.size
+    val selectedFilterTotal = totalExpenseAmount(filteredExpenses)
+    val selectedFilterTotalLabel = when (selectedFilter) {
+        "Parceladas" -> "Total em Parceladas"
+        "Únicas" -> "Total em Únicas"
+        "Fixas" -> "Total em Fixas"
+        else -> null
+    }
+    val formattedSelectedFilterTotal = remember(selectedFilterTotal) {
+        NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
+            .format(selectedFilterTotal)
+    }
     val expensesErrorBannerMessage = uiState.errorMessage?.let { error ->
         dataRequestErrorMessage(
             errorMessage = error,
@@ -294,6 +305,35 @@ fun DespesasScreen(
                     else -> "$selectedFilterCount despesas"
                 }
             )
+
+            if (
+                selectedFilterTotalLabel != null &&
+                (uiState.hasLoadedOnce || uiState.expensesData.isNotEmpty()) &&
+                !(uiState.errorMessage != null && uiState.expensesData.isEmpty())
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedFilterTotalLabel,
+                        color = secondaryTextColor,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = formattedSelectedFilterTotal,
+                        color = PrimaryBlue,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                }
+            }
 
             expensesErrorBannerMessage?.let { message ->
                 AppDataErrorBanner(
