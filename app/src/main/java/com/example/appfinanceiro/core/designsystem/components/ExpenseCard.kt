@@ -306,10 +306,6 @@ private fun DetailedExpenseCard(
                     ) {
                         Text(text = type, color = TextMuted, fontSize = 10.sp)
                     }
-                    if (isPaid) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        MiniChip(label = "Paga", color = GreenPositive)
-                    }
                     Text(
                         text = " • $date",
                         color = secondaryColor,
