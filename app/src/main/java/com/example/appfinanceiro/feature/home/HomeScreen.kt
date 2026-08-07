@@ -49,6 +49,8 @@ import com.example.appfinanceiro.core.designsystem.components.ExpenseDetailsDial
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
 import com.example.appfinanceiro.core.designsystem.components.swipeNavigation
 import com.example.appfinanceiro.core.network.Expense
+import com.example.appfinanceiro.core.network.paymentCardSourceLabel
+import com.example.appfinanceiro.core.network.paymentSources
 import com.example.appfinanceiro.feature.home.components.AddExpenseButton
 import com.example.appfinanceiro.feature.home.components.DespesasHeaderSection
 import com.example.appfinanceiro.feature.home.components.ExpenseItem
@@ -144,14 +146,16 @@ fun HomeScreen(
             null -> true
 
             "Salario" ->
-                expense.payment_source.equals("Salario", ignoreCase = true) ||
-                        expense.payment_source.equals("Salário", ignoreCase = true)
+                expense.paymentSources().any {
+                    it.equals("Salario", ignoreCase = true) ||
+                        it.equals("Salário", ignoreCase = true)
+                }
 
             "Adiantamento" ->
-                expense.payment_source.equals("Adiantamento", ignoreCase = true)
+                expense.paymentSources().any { it.equals("Adiantamento", ignoreCase = true) }
 
             "Renda Extra" ->
-                expense.payment_source.equals("Renda Extra", ignoreCase = true)
+                expense.paymentSources().any { it.equals("Renda Extra", ignoreCase = true) }
 
             else -> true
         }
@@ -383,7 +387,7 @@ fun HomeScreen(
                     iconColor = color,
                     title = expense.description,
                     categoryName = categoryName,
-                    paymentSource = expense.payment_source ?: "Não informado",
+                    paymentSource = expense.paymentCardSourceLabel(),
                     type = typeText,
                     date = formattedDate,
                     value = "- ${formatCurrency(expense.amount)}",

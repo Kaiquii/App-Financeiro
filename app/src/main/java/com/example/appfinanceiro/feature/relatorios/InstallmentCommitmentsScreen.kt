@@ -780,7 +780,7 @@ private fun PurchaseCard(purchase: InstallmentPurchase) {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "${purchase.categoria_nome} - ${purchase.fonte_pagamento}",
+                        text = "${purchase.categoria_nome} - ${purchase.paymentSourceLabel()}",
                         color = TextMuted,
                         fontSize = 13.sp,
                         maxLines = 1,
@@ -935,7 +935,7 @@ private fun ParcelRow(parcel: InstallmentParcel) {
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "${parcel.parcela_atual}/${parcel.total_parcelas} - ${parcel.categoria_nome} - ${parcel.fonte_pagamento}",
+                text = "${parcel.parcela_atual}/${parcel.total_parcelas} - ${parcel.categoria_nome} - ${parcel.paymentSourceLabel()}",
                 color = TextMuted,
                 fontSize = 12.sp
             )
@@ -1031,6 +1031,27 @@ private fun formatShortMonth(month: Int): String {
 
 private fun formatMonthYear(month: Int, year: Int): String {
     return "${formatShortMonth(month)}/$year"
+}
+
+private fun InstallmentPurchase.paymentSourceLabel(): String =
+    fonte_pagamento.paymentSourceLabel(shortLabel = true)
+
+private fun InstallmentParcel.paymentSourceLabel(): String =
+    fonte_pagamento.paymentSourceLabel(shortLabel = false)
+
+private fun String.paymentSourceLabel(shortLabel: Boolean): String {
+    val normalized = lowercase()
+    val sourceNames = listOf("salário", "salario", "adiantamento", "renda extra")
+    val isSplitPayment =
+        contains("|") ||
+            sourceNames.count { source -> normalized.contains(source) } > 1 ||
+            normalized.contains("pagamento dividido")
+
+    return if (isSplitPayment) {
+        if (shortLabel) "Pag. dividido" else "Pagamento dividido"
+    } else {
+        this
+    }
 }
 
 private fun addMonths(month: Int, year: Int, amount: Int): Pair<Int, Int> {

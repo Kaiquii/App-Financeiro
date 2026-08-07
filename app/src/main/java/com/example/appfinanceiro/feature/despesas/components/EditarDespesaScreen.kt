@@ -62,6 +62,7 @@ import com.example.appfinanceiro.core.designsystem.components.AppDatePickerDialo
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.network.Category
 import com.example.appfinanceiro.core.network.ExpenseUpdateRequest
+import com.example.appfinanceiro.core.network.PaymentSplitRequest
 import com.example.appfinanceiro.feature.despesas.validateExpenseForm
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -96,6 +97,8 @@ fun EditarDespesaScreen(
     val sources = listOf("Salário", "Adiantamento", "Renda Extra")
     var selectedSource by remember { mutableStateOf(sources[0]) }
     var expandedSource by remember { mutableStateOf(false) }
+    var isSplitPayment by remember { mutableStateOf(false) }
+    var paymentSplits by remember { mutableStateOf(listOf(PaymentSplitInput(selectedSource, ""))) }
 
     val calendar = remember { Calendar.getInstance() }
     val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'00:00:00XXX", Locale.getDefault())
@@ -124,6 +127,21 @@ fun EditarDespesaScreen(
 
                 if (sources.contains(expense.payment_source)) {
                     selectedSource = expense.payment_source ?: sources[0]
+                }
+                val loadedSplits = expense.payment_splits.map { split ->
+                    PaymentSplitInput(
+                        source = split.payment_source,
+                        amountText = split.amount.toString().replace(".", ",")
+                    )
+                }
+                if (loadedSplits.size > 1) {
+                    isSplitPayment = true
+                    paymentSplits = loadedSplits
+                } else {
+                    paymentSplits = listOf(
+                        loadedSplits.firstOrNull()
+                            ?: PaymentSplitInput(selectedSource, amountText)
+                    )
                 }
 
                 originalType = expense.type ?: "Única"
@@ -244,15 +262,36 @@ fun EditarDespesaScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                CustomDropdown(
-                    label = "Origem do Pagamento",
-                    selectedValue = selectedSource,
-                    options = sources,
-                    expanded = expandedSource,
-                    onExpandedChange = { expandedSource = it }
-                ) {
-                    selectedSource = sources[it]
-                    expandedSource = false
+                if (isSplitPayment) {
+                    PaymentSplitSection(
+                        sources = sources,
+                        splits = paymentSplits,
+                        totalAmount = amountText.toAmount() ?: 0.0,
+                        onSplitsChange = { paymentSplits = it }
+                    )
+                    TextButton(onClick = {
+                        isSplitPayment = false
+                        selectedSource = paymentSplits.firstOrNull()?.source ?: sources[0]
+                    }) {
+                        Text("Usar apenas uma origem", color = PrimaryBlue)
+                    }
+                } else {
+                    CustomDropdown(
+                        label = "Origem do Pagamento",
+                        selectedValue = selectedSource,
+                        options = sources,
+                        expanded = expandedSource,
+                        onExpandedChange = { expandedSource = it }
+                    ) {
+                        selectedSource = sources[it]
+                        expandedSource = false
+                    }
+                    TextButton(onClick = {
+                        isSplitPayment = true
+                        paymentSplits = listOf(PaymentSplitInput(selectedSource, amountText))
+                    }) {
+                        Text("Dividir pagamento", color = PrimaryBlue)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -355,6 +394,14 @@ fun EditarDespesaScreen(
                             Toast.makeText(context, validationMessage, Toast.LENGTH_SHORT).show()
                             return@Button
                         }
+                        val finalAmount = amountText.toAmount() ?: 0.0
+                        if (isSplitPayment) {
+                            val splitMessage = paymentSplitValidationMessage(finalAmount, paymentSplits)
+                            if (splitMessage != null) {
+                                Toast.makeText(context, splitMessage, Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                        }
 
                         if (originalType.equals("Fixa", ignoreCase = true) && updateFuture) {
                             showFixedExpenseConfirmation = true
@@ -364,7 +411,6 @@ fun EditarDespesaScreen(
                         isLoading = true
                         coroutineScope.launch {
                             try {
-                                val finalAmount = amountText.replace(",", ".").toDoubleOrNull() ?: 0.0
                                 val parsedDate = try {
                                     displayFormat.parse(dateText) ?: calendar.time
                                 } catch (e: Exception) {
@@ -375,7 +421,12 @@ fun EditarDespesaScreen(
                                     amount = finalAmount,
                                     description = description,
                                     category_id = selectedCategory!!.id,
-                                    payment_source = selectedSource,
+                                    payment_source = if (isSplitPayment) null else selectedSource,
+                                    payment_splits = if (isSplitPayment) {
+                                        paymentSplits.map {
+                                            PaymentSplitRequest(it.source, it.amountText.toAmount()!!)
+                                        }
+                                    } else null,
                                     date = dateFormat.format(parsedDate),
                                     notes = notes.trim(),
                                     update_future = if (
@@ -402,7 +453,13 @@ fun EditarDespesaScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                    enabled = !isLoading && (
+                        !isSplitPayment || paymentSplitValidationMessage(
+                            amountText.toAmount() ?: 0.0,
+                            paymentSplits
+                        ) == null
+                    )
                 ) {
                     Text(
                         "Salvar Alterações",
@@ -439,7 +496,7 @@ fun EditarDespesaScreen(
                                 isLoading = true
                                 coroutineScope.launch {
                                     try {
-                                        val finalAmount = amountText.replace(",", ".").toDoubleOrNull() ?: 0.0
+                                        val finalAmount = amountText.toAmount() ?: 0.0
                                         val parsedDate = try {
                                             displayFormat.parse(dateText) ?: calendar.time
                                         } catch (e: Exception) {
@@ -450,7 +507,12 @@ fun EditarDespesaScreen(
                                             amount = finalAmount,
                                             description = description,
                                             category_id = selectedCategory!!.id,
-                                            payment_source = selectedSource,
+                                            payment_source = if (isSplitPayment) null else selectedSource,
+                                            payment_splits = if (isSplitPayment) {
+                                                paymentSplits.map {
+                                                    PaymentSplitRequest(it.source, it.amountText.toAmount()!!)
+                                                }
+                                            } else null,
                                             date = dateFormat.format(parsedDate),
                                             notes = notes.trim(),
                                             update_future = true

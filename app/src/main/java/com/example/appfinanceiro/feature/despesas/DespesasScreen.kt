@@ -72,6 +72,7 @@ import com.example.appfinanceiro.core.designsystem.theme.GreenPositive
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 import com.example.appfinanceiro.core.network.Expense
+import com.example.appfinanceiro.core.network.paymentCardSourceLabel
 import com.example.appfinanceiro.feature.home.components.MonthSelector
 import com.example.appfinanceiro.feature.home.utils.getCategoryIconAndColor
 import java.text.NumberFormat
@@ -706,7 +707,11 @@ fun DespesaListItem(
     val formattedAmount = formatter.format(expense.amount)
 
     val categoryName = categoriesMap[expense.category_id] ?: "Outros"
-    val paymentSource = expense.payment_source ?: "Salário"
+    val paymentSource = if (expense.payment_splits.size > 1) {
+        "Pag. dividido"
+    } else {
+        expense.paymentCardSourceLabel()
+    }
     val (icon, color) = getCategoryIconAndColor(categoryName)
 
     ExpenseCard(

@@ -61,6 +61,7 @@ import com.example.appfinanceiro.core.designsystem.theme.TextMuted
 import com.example.appfinanceiro.core.network.Category
 import com.example.appfinanceiro.core.network.CategoryRequest
 import com.example.appfinanceiro.core.network.ExpenseRequest
+import com.example.appfinanceiro.core.network.PaymentSplitRequest
 import com.example.appfinanceiro.feature.despesas.validateExpenseForm
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -92,6 +93,8 @@ fun NovaDespesaScreen(
     val sources = listOf("Salário", "Adiantamento", "Renda Extra")
     var selectedSource by remember { mutableStateOf(sources[0]) }
     var expandedSource by remember { mutableStateOf(false) }
+    var isSplitPayment by remember { mutableStateOf(false) }
+    var paymentSplits by remember { mutableStateOf(listOf(PaymentSplitInput(selectedSource, ""))) }
 
     val calendar = remember { Calendar.getInstance() }
     val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'00:00:00XXX", Locale.getDefault())
@@ -309,14 +312,37 @@ fun NovaDespesaScreen(
             )
 
 
-            CustomDropdown(
-                label = "Origem do Pagamento",
-                selectedValue = selectedSource,
-                options = sources,
-                expanded = expandedSource,
-                onExpandedChange = { expandedSource = it },
-                onSelect = { index -> selectedSource = sources[index]; expandedSource = false }
-            )
+            if (isSplitPayment) {
+                PaymentSplitSection(
+                    sources = sources,
+                    splits = paymentSplits,
+                    totalAmount = amountText.toAmount() ?: 0.0,
+                    onSplitsChange = { paymentSplits = it }
+                )
+                TextButton(onClick = {
+                    isSplitPayment = false
+                    selectedSource = paymentSplits.firstOrNull()?.source ?: sources[0]
+                }) {
+                    Text("Usar apenas uma origem", color = PrimaryBlue)
+                }
+            } else {
+                CustomDropdown(
+                    label = "Origem do Pagamento",
+                    selectedValue = selectedSource,
+                    options = sources,
+                    expanded = expandedSource,
+                    onExpandedChange = { expandedSource = it },
+                    onSelect = { index -> selectedSource = sources[index]; expandedSource = false }
+                )
+                TextButton(onClick = {
+                    isSplitPayment = true
+                    paymentSplits = listOf(
+                        PaymentSplitInput(selectedSource, amountText)
+                    )
+                }) {
+                    Text("Dividir pagamento", color = PrimaryBlue)
+                }
+            }
 
             FormLabel("Data de Pagamento")
             CustomInput(
@@ -384,16 +410,30 @@ fun NovaDespesaScreen(
                         Toast.makeText(context, validationMessage, Toast.LENGTH_SHORT).show()
                         return@Button
                     }
+                    val finalAmount = amountText.toAmount() ?: 0.0
+                    if (isSplitPayment) {
+                        val splitMessage = paymentSplitValidationMessage(finalAmount, paymentSplits)
+                        if (splitMessage != null) {
+                            Toast.makeText(context, splitMessage, Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                    }
                     isLoading = true
                     coroutineScope.launch {
                         try {
-                            val finalAmount = amountText.replace(",", ".").toDoubleOrNull() ?: 0.0
                             val parsedDate = try { displayFormat.parse(dateText) ?: calendar.time } catch (e: Exception) { calendar.time }
                             val request = ExpenseRequest(
                                 amount = finalAmount,
                                 description = description,
                                 category_id = selectedCategory!!.id,
-                                payment_source = selectedSource,
+                                payment_source = if (isSplitPayment) null else selectedSource,
+                                payment_splits = if (isSplitPayment) {
+                                    paymentSplits.map {
+                                        PaymentSplitRequest(it.source, it.amountText.toAmount()!!)
+                                    }
+                                } else {
+                                    null
+                                },
                                 date = dateFormat.format(parsedDate),
                                 type = selectedType,
                                 installments = if (selectedType == "Parcelada") installments else 1,
@@ -412,7 +452,12 @@ fun NovaDespesaScreen(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                enabled = !isLoading
+                enabled = !isLoading && (
+                    !isSplitPayment || paymentSplitValidationMessage(
+                        amountText.toAmount() ?: 0.0,
+                        paymentSplits
+                    ) == null
+                )
             ) {
                 if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 else Text("Salvar Despesa", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)

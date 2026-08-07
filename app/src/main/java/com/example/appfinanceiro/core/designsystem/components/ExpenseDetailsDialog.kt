@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.expenseDetailBlock
 import com.example.appfinanceiro.core.network.Expense
+import com.example.appfinanceiro.core.network.PaymentSplit
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -88,7 +89,11 @@ fun ExpenseDetailsDialog(
                 )
 
                 DetailsGroup(
-                    paymentSource = expense.payment_source ?: "Não informado",
+                    paymentSplits = expense.payment_splits.ifEmpty {
+                        expense.payment_source?.let { source ->
+                            listOf(PaymentSplit(payment_source = source, amount = expense.amount))
+                        }.orEmpty()
+                    },
                     date = formattedDate,
                     paidAtLabel = paidAtLabel,
                     textColor = dialogTextColor
@@ -176,7 +181,7 @@ private fun DetailChip(text: String) {
 
 @Composable
 private fun DetailsGroup(
-    paymentSource: String,
+    paymentSplits: List<PaymentSplit>,
     date: String,
     paidAtLabel: String?,
     textColor: Color
@@ -193,7 +198,26 @@ private fun DetailsGroup(
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        DetailLine(label = "Origem", value = paymentSource, textColor = textColor)
+        if (paymentSplits.size <= 1) {
+            DetailLine(
+                label = "Origem",
+                value = paymentSplits.firstOrNull()?.payment_source ?: "Não informado",
+                textColor = textColor
+            )
+        } else {
+            Text(
+                text = "Pagamento dividido",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp
+            )
+            paymentSplits.forEach { split ->
+                DetailLine(
+                    label = split.payment_source,
+                    value = NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(split.amount),
+                    textColor = textColor
+                )
+            }
+        }
         HorizontalDivider(color = textColor.copy(alpha = 0.08f))
         DetailLine(label = "Data", value = date, textColor = textColor)
         paidAtLabel?.let { label ->

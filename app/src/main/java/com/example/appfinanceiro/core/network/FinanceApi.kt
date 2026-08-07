@@ -49,10 +49,35 @@ data class Expense(
     val installments: Int?,
     val current_installment: Int?,
     val payment_source: String?,
+    val payment_splits: List<PaymentSplit> = emptyList(),
     val notes: String? = null,
     val is_paid: Boolean = false,
     val paid_at: String? = null
 )
+
+data class PaymentSplit(
+    val expense_id: Int? = null,
+    val payment_source: String,
+    val amount: Double
+)
+
+data class PaymentSplitRequest(
+    val payment_source: String,
+    val amount: Double
+)
+
+fun Expense.paymentSources(): List<String> = payment_splits
+    .map { it.payment_source }
+    .ifEmpty { listOfNotNull(payment_source) }
+
+fun Expense.paymentSourceLabel(): String = paymentSources()
+    .joinToString(" + ")
+    .ifBlank { "Não informado" }
+fun Expense.paymentCardSourceLabel(): String {
+    val sources = paymentSources().distinct()
+    return if (sources.size > 1) "Pagamento dividido" else paymentSourceLabel()
+}
+
 data class ExpensesResponse(val expenses: List<Expense>, val total: Int)
 
 data class Income(
@@ -139,7 +164,8 @@ data class ExpenseRequest(
     val amount: Double,
     val description: String,
     val category_id: Int,
-    val payment_source: String,
+    val payment_source: String? = null,
+    val payment_splits: List<PaymentSplitRequest>? = null,
     val date: String,
     val type: String,
     val installments: Int,
@@ -155,6 +181,7 @@ data class ExpenseUpdateRequest(
     val description: String? = null,
     val category_id: Int? = null,
     val payment_source: String? = null,
+    val payment_splits: List<PaymentSplitRequest>? = null,
     val type: String? = null,
     val date: String? = null,
     val notes: String? = null,

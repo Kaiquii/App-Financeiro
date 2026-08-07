@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -310,7 +311,11 @@ private fun DetailedExpenseCard(
                         text = " • $date",
                         color = secondaryColor,
                         fontSize = 12.sp,
-                        modifier = Modifier.padding(start = 8.dp)
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .weight(1f)
                     )
                     if (!notes.isNullOrBlank()) {
                         Spacer(modifier = Modifier.width(6.dp))
@@ -321,8 +326,15 @@ private fun DetailedExpenseCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Column(horizontalAlignment = Alignment.End) {
-                Row {
+            Column(
+                modifier = Modifier.width(120.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     onPaymentStatusClick?.let { onClick ->
                         Box(
                             modifier = Modifier
@@ -357,7 +369,6 @@ private fun DetailedExpenseCard(
                                 modifier = Modifier.size(12.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(14.dp))
                     }
                     Box(
                         modifier = Modifier
@@ -371,7 +382,6 @@ private fun DetailedExpenseCard(
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(14.dp))
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Editar",
@@ -380,7 +390,6 @@ private fun DetailedExpenseCard(
                             .size(18.dp)
                             .clickable { onEdit() }
                     )
-                    Spacer(modifier = Modifier.width(16.dp))
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Deletar",
@@ -410,7 +419,13 @@ private fun DetailedExpenseCard(
                         modifier = Modifier.size(12.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = paymentSource, color = secondaryColor, fontSize = 12.sp)
+                    Text(
+                        text = paymentSource,
+                        color = secondaryColor,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }
@@ -447,6 +462,7 @@ private fun MiniChip(label: String, color: Color) {
 
 private fun paymentSourceColor(paymentSource: String): Color {
     return when {
+        paymentSource.contains("dividido", ignoreCase = true) -> PrimaryBlue
         paymentSource.equals("Salario", ignoreCase = true) ||
             paymentSource.equals("Salário", ignoreCase = true) -> PrimaryBlue
 
