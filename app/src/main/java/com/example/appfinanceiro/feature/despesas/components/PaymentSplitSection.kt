@@ -90,6 +90,7 @@ fun PaymentSplitSection(
             PaymentSplitRow(
                 index = index,
                 sources = sources,
+                selectedSources = splits.map { it.source },
                 split = split,
                 canRemove = splits.size > 1,
                 onChange = { updated ->
@@ -129,21 +130,26 @@ fun PaymentSplitSection(
 private fun PaymentSplitRow(
     index: Int,
     sources: List<String>,
+    selectedSources: List<String>,
     split: PaymentSplitInput,
     canRemove: Boolean,
     onChange: (PaymentSplitInput) -> Unit,
     onRemove: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val availableSources = sources.filter { source ->
+        source == split.source || source !in selectedSources
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         CustomDropdown(
             label = if (index == 0) "Primeira origem" else "Origem ${index + 1}",
             selectedValue = split.source,
-            options = sources,
+            options = availableSources,
             expanded = expanded,
             onExpandedChange = { expanded = it },
             onSelect = {
-                onChange(split.copy(source = sources[it]))
+                onChange(split.copy(source = availableSources[it]))
                 expanded = false
             }
         )
