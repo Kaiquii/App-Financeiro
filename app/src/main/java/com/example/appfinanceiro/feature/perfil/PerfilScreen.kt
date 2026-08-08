@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
@@ -128,12 +129,15 @@ fun PerfilScreen(
     val userAvatarCacheVersion by sessionManager.userAvatarCacheVersion.collectAsState(initial = null)
 
     val isAdmin = userRole.equals("admin", ignoreCase = true)
+    val isPremium = userRole.equals("premium", ignoreCase = true)
     val roleLabel = when (userRole.lowercase()) {
         "admin" -> "Administrador"
+        "premium" -> "Premium"
         "user" -> "Usuário"
         else -> userRole.ifBlank { "Usuário" }
     }
     val adminRoleColor = Color(0xFFFF9800)
+    val premiumRoleColor = Color(0xFF8B5CF6)
 
     var showExitDialog by remember { mutableStateOf(false) }
     var showRemovePhotoDialog by remember { mutableStateOf(false) }
@@ -418,7 +422,9 @@ fun PerfilScreen(
                 userEmail = userEmail,
                 roleLabel = roleLabel,
                 isAdmin = isAdmin,
+                isPremium = isPremium,
                 adminRoleColor = adminRoleColor,
+                premiumRoleColor = premiumRoleColor,
                 avatarImageModel = avatarImageModel,
                 isPhotoLoading = isPhotoLoading,
                 onAvatarClick = {
@@ -471,7 +477,9 @@ private fun ProfileHeader(
     userEmail: String,
     roleLabel: String,
     isAdmin: Boolean,
+    isPremium: Boolean,
     adminRoleColor: Color,
+    premiumRoleColor: Color,
     avatarImageModel: Any?,
     isPhotoLoading: Boolean,
     onAvatarClick: () -> Unit,
@@ -481,7 +489,11 @@ private fun ProfileHeader(
 ) {
     val textColor = MaterialTheme.colorScheme.onBackground
     val surfaceColor = MaterialTheme.colorScheme.surface
-    val roleColor = if (isAdmin) adminRoleColor else PrimaryBlue
+    val roleColor = when {
+        isAdmin -> adminRoleColor
+        isPremium -> premiumRoleColor
+        else -> PrimaryBlue
+    }
     val editProfileContentColor = if (isSystemInDarkTheme()) {
         Color(0xFF0D2B4D)
     } else {
@@ -592,9 +604,9 @@ private fun ProfileHeader(
                         .padding(horizontal = 10.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (isAdmin) {
+                    if (isAdmin || isPremium) {
                         Icon(
-                            imageVector = Icons.Default.Star,
+                            imageVector = if (isAdmin) Icons.Default.Star else Icons.Default.Diamond,
                             contentDescription = null,
                             tint = roleColor,
                             modifier = Modifier.size(14.dp)

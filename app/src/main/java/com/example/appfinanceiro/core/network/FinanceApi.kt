@@ -538,7 +538,7 @@ interface FinanceApi {
         @Header("Authorization") token: String,
         @Query("month") month: Int,
         @Query("year") year: Int
-    ): List<CategoryReportResponse>
+    ): List<CategoryReportResponse>?
 
     @GET("api/reports/chart")
     suspend fun getReportChart(

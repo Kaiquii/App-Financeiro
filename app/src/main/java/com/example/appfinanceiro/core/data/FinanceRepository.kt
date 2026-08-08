@@ -131,7 +131,7 @@ class FinanceRepository : HomeDataSource, ExpensesDataSource, ReportsDataSource,
                 token = bearer(token),
                 month = month,
                 year = year
-            )
+            ).orEmpty()
         }
     }
 
