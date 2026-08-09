@@ -36,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.ApiRequestException
 import com.example.appfinanceiro.core.data.AuthViewModel
 import com.example.appfinanceiro.core.data.userMessageOr
+import com.example.appfinanceiro.core.security.PlayIntegrityException
 import com.example.appfinanceiro.feature.login.components.AuthErrorMessage
 import com.example.appfinanceiro.feature.login.components.AuthHeader
 import com.example.appfinanceiro.feature.login.components.AuthPasswordField
@@ -87,16 +88,20 @@ fun EsqueciSenhaScreen(
             isLoading = true
             clearError()
 
-            try {
-                val response = authViewModel.forgotPassword(email.trim())
+                try {
+                val response = authViewModel.forgotPassword(email)
 
                 Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
                 step = ForgotPasswordStep.ResetPassword
+            } catch (e: PlayIntegrityException) {
+                errorMessage = "Não foi possível validar a segurança do aplicativo. Atualize ou instale o app pela Google Play."
+                android.util.Log.e("PLAY_INTEGRITY", "Falha ao gerar token de recuperação", e)
             } catch (e: ApiRequestException) {
-                errorMessage = if (e.statusCode == 429) {
-                    "Muitas tentativas. Aguarde alguns minutos antes de solicitar outro código."
-                } else {
-                    e.apiMessage ?: "Não foi possível solicitar o código. Tente novamente."
+                errorMessage = when (e.statusCode) {
+                    403 -> "Não foi possível validar a segurança do aplicativo. Atualize ou instale o app pela Google Play."
+                    429 -> "Muitas tentativas. Aguarde alguns minutos antes de solicitar outro código."
+                    503 -> "A validação de segurança está temporariamente indisponível. Tente novamente."
+                    else -> e.apiMessage ?: "Não foi possível solicitar o código. Tente novamente."
                 }
                 android.util.Log.e("API_ERRO", "Falha ao solicitar codigo", e)
             } catch (e: Exception) {

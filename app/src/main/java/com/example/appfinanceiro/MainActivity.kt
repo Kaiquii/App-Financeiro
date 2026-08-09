@@ -19,10 +19,12 @@ import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.lifecycleScope
 import com.example.appfinanceiro.core.biometric.BiometricAuth
 import com.example.appfinanceiro.core.data.SessionManager
 import com.example.appfinanceiro.core.designsystem.theme.AppFinanceiroTheme
 import com.example.appfinanceiro.core.network.SessionAccessEvents
+import com.example.appfinanceiro.core.security.PlayIntegrityProtection
 import com.example.appfinanceiro.core.update.AppUpdateGate
 import com.example.appfinanceiro.feature.assistant.AssistantScreen
 import com.example.appfinanceiro.feature.despesas.DespesasScreen
@@ -39,11 +41,16 @@ import com.example.appfinanceiro.feature.perfil.components.EditarPerfilScreen
 import com.example.appfinanceiro.feature.relatorios.InstallmentCommitmentsScreen
 import com.example.appfinanceiro.feature.relatorios.RelatoriosScreen
 import com.example.appfinanceiro.feature.perfil.components.AjudaScreen
+import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        PlayIntegrityProtection.initialize(applicationContext)
+        lifecycleScope.launch {
+            runCatching { PlayIntegrityProtection.warmUp() }
+        }
         val sessionManager = SessionManager(this)
 
         setContent {

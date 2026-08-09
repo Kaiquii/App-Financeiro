@@ -11,7 +11,11 @@ import retrofit2.http.POST
 import java.util.concurrent.TimeUnit
 
 data class LoginRequest(val email: String, val password: String)
-data class RequestRegisterCodeRequest(val email: String)
+data class RequestRegisterCodeRequest(
+    val email: String,
+    val protection_provider: String,
+    val play_integrity_token: String
+)
 
 data class RegisterRequest(
     val name: String,
@@ -20,7 +24,11 @@ data class RegisterRequest(
     val code: String
 )
 
-data class ForgotPasswordRequest(val email: String)
+data class ForgotPasswordRequest(
+    val email: String,
+    val protection_provider: String,
+    val play_integrity_token: String
+)
 
 data class ResetPasswordRequest(
     val email: String,

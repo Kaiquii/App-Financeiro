@@ -9,6 +9,7 @@ import com.example.appfinanceiro.core.network.auth.RegisterResponse
 import com.example.appfinanceiro.core.network.auth.RequestRegisterCodeRequest
 import com.example.appfinanceiro.core.network.auth.ResetPasswordRequest
 import com.example.appfinanceiro.core.network.auth.RetrofitClient
+import com.example.appfinanceiro.core.security.PlayIntegrityProtection
 
 class AuthRepository {
     suspend fun login(email: String, password: String): LoginResponse = executeApiRequest(
@@ -17,10 +18,20 @@ class AuthRepository {
         RetrofitClient.authApi.login(LoginRequest(email, password))
     }
 
-    suspend fun requestRegisterCode(email: String): DefaultAuthResponse = executeApiRequest(
-        authenticated = false
-    ) {
-        RetrofitClient.authApi.requestRegisterCode(RequestRegisterCodeRequest(email))
+    suspend fun requestRegisterCode(email: String): DefaultAuthResponse {
+        val (normalizedEmail, token) = PlayIntegrityProtection.newToken(
+            path = "/api/auth/request-register-code",
+            email = email
+        )
+        return executeApiRequest(authenticated = false) {
+            RetrofitClient.authApi.requestRegisterCode(
+                RequestRegisterCodeRequest(
+                    email = normalizedEmail,
+                    protection_provider = "play_integrity",
+                    play_integrity_token = token
+                )
+            )
+        }
     }
 
     suspend fun register(
@@ -34,10 +45,20 @@ class AuthRepository {
         )
     }
 
-    suspend fun forgotPassword(email: String): DefaultAuthResponse = executeApiRequest(
-        authenticated = false
-    ) {
-        RetrofitClient.authApi.forgotPassword(ForgotPasswordRequest(email))
+    suspend fun forgotPassword(email: String): DefaultAuthResponse {
+        val (normalizedEmail, token) = PlayIntegrityProtection.newToken(
+            path = "/api/auth/forgot-password",
+            email = email
+        )
+        return executeApiRequest(authenticated = false) {
+            RetrofitClient.authApi.forgotPassword(
+                ForgotPasswordRequest(
+                    email = normalizedEmail,
+                    protection_provider = "play_integrity",
+                    play_integrity_token = token
+                )
+            )
+        }
     }
 
     suspend fun resetPassword(

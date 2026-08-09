@@ -34,8 +34,8 @@ android {
         applicationId = "br.com.sobraai.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 123
-        versionName = "1.2.3"
+        versionCode = 124
+        versionName = "1.2.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -92,4 +92,5 @@ dependencies {
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
     implementation("androidx.exifinterface:exifinterface:1.4.1")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.google.android.play:integrity:1.6.0")
 }

@@ -48,6 +48,7 @@ import com.example.appfinanceiro.core.data.AuthViewModel
 import com.example.appfinanceiro.core.data.userMessageOr
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
 import com.example.appfinanceiro.core.designsystem.theme.TextSecondary
+import com.example.appfinanceiro.core.security.PlayIntegrityException
 import com.example.appfinanceiro.feature.login.components.AuthErrorMessage
 import com.example.appfinanceiro.feature.login.components.AuthPasswordField
 import com.example.appfinanceiro.feature.login.components.AuthPrimaryButton
@@ -93,19 +94,24 @@ fun RegisterScreen(
                 clearError()
 
                 try {
-                    val response = authViewModel.requestRegisterCode(email.trim())
+                    val response = authViewModel.requestRegisterCode(email)
                     code = ""
                     step = RegisterStep.Confirmation
                     Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
+                } catch (e: PlayIntegrityException) {
+                    errorMessage = "Não foi possível validar a segurança do aplicativo. Atualize ou instale o app pela Google Play."
+                    Log.e("PLAY_INTEGRITY", "Falha ao gerar token de cadastro", e)
                 } catch (e: ApiRequestException) {
                     errorMessage = when (e.statusCode) {
                         400 -> e.apiMessage ?: "Informe um e-mail válido."
+                        403 -> "Não foi possível validar a segurança do aplicativo. Atualize ou instale o app pela Google Play."
                         409 -> "Este e-mail já possui uma conta. Faça login para continuar."
                         429 -> {
                             resendBlocked = true
                             "Muitas tentativas. Aguarde alguns minutos antes de solicitar outro código."
                         }
                         500 -> "Não foi possível enviar o código. Tente novamente."
+                        503 -> "A validação de segurança está temporariamente indisponível. Tente novamente."
                         else -> e.apiMessage ?: "Não foi possível enviar o código. Tente novamente."
                     }
                     Log.e("API_ERRO", "Falha ao solicitar código de cadastro", e)
