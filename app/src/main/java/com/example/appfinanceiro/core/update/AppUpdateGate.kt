@@ -112,7 +112,7 @@ private fun AppUpdateDialog(
     }
     val message = state.version.message
         ?.takeIf { it.isNotBlank() }
-        ?: "Atualize o SobraAí para aproveitar as melhorias mais recentes."
+        ?: "Atualize o SobraAi para aproveitar as melhorias mais recentes."
 
     AlertDialog(
         onDismissRequest = onDismiss,

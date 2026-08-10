@@ -332,7 +332,7 @@ fun PerfilScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = userName.ifBlank { "SobraAí" },
+                                text = userName.ifBlank { "SobraAi" },
                                 color = TextMuted,
                                 fontSize = 12.sp,
                                 maxLines = 1
