@@ -1,4 +1,4 @@
-# 💰 SobraAí
+# 💰 SobraAi
 
 Um aplicativo moderno de gestão financeira desenvolvido nativamente para Android. Este projeto foca em uma interface de usuário elegante e responsiva, com integração segura a uma API RESTful.
 
