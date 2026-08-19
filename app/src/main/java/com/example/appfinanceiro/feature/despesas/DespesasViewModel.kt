@@ -15,16 +15,20 @@ import kotlinx.coroutines.launch
 
 data class DespesasUiState(
     val expensesData: List<Expense> = emptyList(),
+    val effectiveExpensesData: List<Expense> = emptyList(),
     val categoriesMap: Map<Int, String> = emptyMap(),
     val isLoading: Boolean = true,
     val hasLoadedOnce: Boolean = false,
     val isDeleting: Boolean = false,
     val isUpdatingPaymentStatus: Boolean = false,
+    val isUpdatingAdvanceStatus: Boolean = false,
     val errorMessage: String? = null,
     val deleteSuccessMessage: String? = null,
     val deleteErrorMessage: String? = null,
     val paymentStatusSuccessMessage: String? = null,
     val paymentStatusErrorMessage: String? = null,
+    val advanceStatusSuccessMessage: String? = null,
+    val advanceStatusErrorMessage: String? = null,
     val isSessionExpired: Boolean = false
 )
 
@@ -44,6 +48,7 @@ class DespesasViewModel(
             try {
                 val categories = repository.getCategories(token)
                 val expenses = repository.getExpenses(token, month, year, paymentStatus)
+                val effectiveExpenses = repository.getEffectiveExpenses(token, month, year, paymentStatus)
 
                 _uiState.update {
                     it.copy(
@@ -51,6 +56,7 @@ class DespesasViewModel(
                             category.id to category.name
                         },
                         expensesData = expenses.expenses,
+                        effectiveExpensesData = effectiveExpenses.expenses,
                         errorMessage = null
                     )
                 }
@@ -154,13 +160,63 @@ class DespesasViewModel(
         }
     }
 
+    fun updateAdvanceStatus(
+        token: String,
+        expense: Expense,
+        isAdvanced: Boolean,
+        advancedAt: String?,
+        onUpdated: () -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isUpdatingAdvanceStatus = true,
+                    advanceStatusSuccessMessage = null,
+                    advanceStatusErrorMessage = null
+                )
+            }
+
+            try {
+                val response = repository.updateAdvanceStatus(
+                    token = token,
+                    id = expense.id,
+                    isAdvanced = isAdvanced,
+                    advancedAt = advancedAt
+                )
+                _uiState.update { state ->
+                    state.copy(
+                        expensesData = state.expensesData.replaceExpense(response.expense),
+                        effectiveExpensesData = state.effectiveExpensesData.replaceExpense(response.expense),
+                        advanceStatusSuccessMessage = response.message
+                    )
+                }
+                onUpdated()
+            } catch (e: SessionExpiredException) {
+                _uiState.update { it.copy(isSessionExpired = true) }
+            } catch (e: Exception) {
+                Log.e("API_ERRO", "Falha ao atualizar adiantamento", e)
+                _uiState.update {
+                    it.copy(
+                        advanceStatusErrorMessage = e.userMessageOr(
+                            "Não foi possível atualizar o adiantamento."
+                        )
+                    )
+                }
+            } finally {
+                _uiState.update { it.copy(isUpdatingAdvanceStatus = false) }
+            }
+        }
+    }
+
     fun clearMessages() {
         _uiState.update {
             it.copy(
                 deleteSuccessMessage = null,
                 deleteErrorMessage = null,
                 paymentStatusSuccessMessage = null,
-                paymentStatusErrorMessage = null
+                paymentStatusErrorMessage = null,
+                advanceStatusSuccessMessage = null,
+                advanceStatusErrorMessage = null
             )
         }
     }
@@ -171,3 +227,6 @@ class DespesasViewModel(
         }
     }
 }
+
+private fun List<Expense>.replaceExpense(updated: Expense): List<Expense> =
+    map { current -> if (current.id == updated.id) updated else current }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
@@ -58,6 +59,9 @@ fun ExpenseCard(
     value: String,
     notes: String?,
     isPaid: Boolean = false,
+    isAdvanced: Boolean = false,
+    advancedLabel: String? = null,
+    showDate: Boolean = true,
     onView: () -> Unit,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -75,6 +79,9 @@ fun ExpenseCard(
             value = value,
             notes = notes,
             isPaid = isPaid,
+            isAdvanced = isAdvanced,
+            advancedLabel = advancedLabel,
+            showDate = showDate,
             onView = onView
         )
 
@@ -89,6 +96,9 @@ fun ExpenseCard(
             value = value,
             notes = notes,
             isPaid = isPaid,
+            isAdvanced = isAdvanced,
+            advancedLabel = advancedLabel,
+            showDate = showDate,
             onView = onView,
             onEdit = onEdit ?: {},
             onDelete = onDelete ?: {},
@@ -109,6 +119,9 @@ private fun CompactExpenseCard(
     value: String,
     notes: String?,
     isPaid: Boolean,
+    isAdvanced: Boolean,
+    advancedLabel: String?,
+    showDate: Boolean,
     onView: () -> Unit
 ) {
     val textColor = MaterialTheme.colorScheme.onBackground
@@ -166,13 +179,19 @@ private fun CompactExpenseCard(
                     Spacer(modifier = Modifier.width(6.dp))
                     MiniChip(label = "Paga", color = GreenPositive)
                 }
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = date,
-                    color = TextMuted,
-                    fontSize = 10.sp,
-                    maxLines = 1
-                )
+                if (isAdvanced) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    CompactAdvanceIndicator(label = advancedLabel)
+                }
+                if (showDate) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = date,
+                        color = TextMuted,
+                        fontSize = 10.sp,
+                        maxLines = 1
+                    )
+                }
                 if (!notes.isNullOrBlank()) {
                     Spacer(modifier = Modifier.width(6.dp))
                     ExpenseNoteIndicatorIcon()
@@ -244,6 +263,9 @@ private fun DetailedExpenseCard(
     value: String,
     notes: String?,
     isPaid: Boolean,
+    isAdvanced: Boolean,
+    advancedLabel: String?,
+    showDate: Boolean,
     onView: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -307,16 +329,24 @@ private fun DetailedExpenseCard(
                     ) {
                         Text(text = type, color = TextMuted, fontSize = 10.sp)
                     }
-                    Text(
-                        text = " • $date",
-                        color = secondaryColor,
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .weight(1f)
-                    )
+                    if (isAdvanced) {
+                        Spacer(modifier = Modifier.width(5.dp))
+                        CompactAdvanceIndicator(label = advancedLabel)
+                    }
+                    if (showDate) {
+                        Text(
+                            text = " • $date",
+                            color = secondaryColor,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .weight(1f)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                     if (!notes.isNullOrBlank()) {
                         Spacer(modifier = Modifier.width(6.dp))
                         ExpenseNoteIndicatorIcon()
@@ -456,7 +486,41 @@ private fun MiniChip(label: String, color: Color) {
             .background(color.copy(alpha = 0.18f), RoundedCornerShape(4.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
-        Text(text = label, color = color, fontSize = 10.sp)
+        Text(
+            text = label,
+            color = color,
+            fontSize = 10.sp,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun CompactAdvanceIndicator(label: String?) {
+    Row(
+        modifier = Modifier
+            .background(PrimaryBlue.copy(alpha = 0.14f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 5.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.EventAvailable,
+            contentDescription = label ?: "Despesa adiantada",
+            tint = PrimaryBlue,
+            modifier = Modifier.size(11.dp)
+        )
+        Text(
+            text = "Adiantada",
+            color = PrimaryBlue,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

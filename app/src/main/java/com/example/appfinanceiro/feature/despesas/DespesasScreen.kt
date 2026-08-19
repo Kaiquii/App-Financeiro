@@ -75,6 +75,8 @@ import com.example.appfinanceiro.core.network.Expense
 import com.example.appfinanceiro.core.network.paymentCardSourceLabel
 import com.example.appfinanceiro.feature.home.components.MonthSelector
 import com.example.appfinanceiro.feature.home.utils.getCategoryIconAndColor
+import com.example.appfinanceiro.feature.despesas.components.AdvanceExpenseDialog
+import com.example.appfinanceiro.feature.despesas.components.RemoveAdvanceDialog
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -120,6 +122,8 @@ fun DespesasScreen(
     var expenseToDelete by remember { mutableStateOf<Expense?>(null) }
     var expenseToView by remember { mutableStateOf<Expense?>(null) }
     var expensePaymentStatusToChange by remember { mutableStateOf<Expense?>(null) }
+    var expenseToAdvance by remember { mutableStateOf<Expense?>(null) }
+    var expenseToRemoveAdvance by remember { mutableStateOf<Expense?>(null) }
 
     LaunchedEffect(currentMonthIndex, currentYear, userToken, refreshTrigger, selectedPaymentStatus) {
         userToken?.let { token ->
@@ -144,7 +148,9 @@ fun DespesasScreen(
         uiState.deleteSuccessMessage,
         uiState.deleteErrorMessage,
         uiState.paymentStatusSuccessMessage,
-        uiState.paymentStatusErrorMessage
+        uiState.paymentStatusErrorMessage,
+        uiState.advanceStatusSuccessMessage,
+        uiState.advanceStatusErrorMessage
     ) {
         uiState.deleteSuccessMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
@@ -165,6 +171,14 @@ fun DespesasScreen(
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearMessages()
         }
+        uiState.advanceStatusSuccessMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessages()
+        }
+        uiState.advanceStatusErrorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearMessages()
+        }
     }
 
     val expenseFilters = listOf("Todas", "Parceladas", "Únicas", "Fixas")
@@ -175,6 +189,16 @@ fun DespesasScreen(
     )
     val filteredExpenses = filterExpenses(
         expenses = uiState.expensesData,
+        searchQuery = searchQuery,
+        selectedFilter = selectedFilter
+    )
+    val incomingAdvanced = incomingAdvancedExpenses(
+        effectiveExpenses = uiState.effectiveExpensesData,
+        selectedMonth = currentMonthIndex + 1,
+        selectedYear = currentYear
+    )
+    val filteredIncomingAdvanced = filterExpenses(
+        expenses = incomingAdvanced,
         searchQuery = searchQuery,
         selectedFilter = selectedFilter
     )
@@ -410,7 +434,7 @@ fun DespesasScreen(
                 }
             } else if (uiState.errorMessage != null && uiState.expensesData.isEmpty()) {
                 Spacer(modifier = Modifier.fillMaxSize())
-            } else if (filteredExpenses.isEmpty()) {
+            } else if (filteredExpenses.isEmpty() && filteredIncomingAdvanced.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -423,9 +447,19 @@ fun DespesasScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    if (filteredExpenses.isNotEmpty()) {
+                        item(key = "scheduled_header") {
+                            Text(
+                                text = "Despesas previstas para ${monthName(currentMonthIndex + 1)}",
+                                color = textColor,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
                     items(
                         items = filteredExpenses,
-                        key = { expense -> expense.id }
+                        key = { expense -> "scheduled_${expense.id}" }
                     ) { expense ->
                         DespesaListItem(
                             expense = expense,
@@ -435,6 +469,37 @@ fun DespesasScreen(
                             onDelete = { expenseToDelete = expense },
                             onPaymentStatusClick = { expensePaymentStatusToChange = expense }
                         )
+                    }
+
+                    if (filteredIncomingAdvanced.isNotEmpty()) {
+                        item(key = "incoming_advanced_header") {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "Adiantadas de outros meses",
+                                    color = textColor,
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = "Incluídas no total de ${monthName(currentMonthIndex + 1)}",
+                                    color = secondaryTextColor,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                        items(
+                            items = filteredIncomingAdvanced,
+                            key = { expense -> "incoming_${expense.id}" }
+                        ) { expense ->
+                            DespesaListItem(
+                                expense = expense,
+                                categoriesMap = uiState.categoriesMap,
+                                onView = { expenseToView = expense },
+                                onEdit = { onEditClick(expense.id) },
+                                onDelete = { expenseToDelete = expense },
+                                onPaymentStatusClick = { expensePaymentStatusToChange = expense }
+                            )
+                        }
                     }
                 }
             }
@@ -648,7 +713,69 @@ fun DespesasScreen(
         ExpenseDetailsDialog(
             expense = expense,
             categoryName = uiState.categoriesMap[expense.category_id] ?: "Outros",
-            onDismiss = { expenseToView = null }
+            onDismiss = { expenseToView = null },
+            onAdvanceClick = {
+                expenseToView = null
+                expenseToAdvance = expense
+            },
+            onChangeAdvanceDateClick = if (expense.isAdvanced) {
+                {
+                    expenseToView = null
+                    expenseToAdvance = expense
+                }
+            } else {
+                null
+            },
+            onRemoveAdvanceClick = if (expense.isAdvanced) {
+                {
+                    expenseToView = null
+                    expenseToRemoveAdvance = expense
+                }
+            } else {
+                null
+            }
+        )
+    }
+
+    expenseToAdvance?.let { expense ->
+        AdvanceExpenseDialog(
+            expense = expense,
+            isUpdating = uiState.isUpdatingAdvanceStatus,
+            onDismiss = { expenseToAdvance = null },
+            onConfirm = { date ->
+                val token = userToken ?: return@AdvanceExpenseDialog
+                viewModel.updateAdvanceStatus(
+                    token = token,
+                    expense = expense,
+                    isAdvanced = true,
+                    advancedAt = date,
+                    onUpdated = {
+                        expenseToAdvance = null
+                        refreshTrigger++
+                    }
+                )
+            }
+        )
+    }
+
+    expenseToRemoveAdvance?.let { expense ->
+        RemoveAdvanceDialog(
+            expense = expense,
+            isUpdating = uiState.isUpdatingAdvanceStatus,
+            onDismiss = { expenseToRemoveAdvance = null },
+            onConfirm = {
+                val token = userToken ?: return@RemoveAdvanceDialog
+                viewModel.updateAdvanceStatus(
+                    token = token,
+                    expense = expense,
+                    isAdvanced = false,
+                    advancedAt = null,
+                    onUpdated = {
+                        expenseToRemoveAdvance = null
+                        refreshTrigger++
+                    }
+                )
+            }
         )
     }
 }
@@ -726,6 +853,9 @@ fun DespesaListItem(
         value = "- $formattedAmount",
         notes = expense.notes,
         isPaid = expense.is_paid,
+        isAdvanced = expense.isAdvanced,
+        advancedLabel = formatAdvancedDate(expense.advancedAt)?.let { "Adiantada em $it" },
+        showDate = !expense.isAdvanced,
         onView = onView,
         onEdit = onEdit,
         onDelete = onDelete,

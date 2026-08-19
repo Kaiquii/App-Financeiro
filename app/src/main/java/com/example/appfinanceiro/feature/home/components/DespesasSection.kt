@@ -315,6 +315,8 @@ fun ExpenseItem(
     value: String,
     notes: String?,
     isPaid: Boolean,
+    isAdvanced: Boolean = false,
+    advancedLabel: String? = null,
     onViewClick: () -> Unit
 ) {
     ExpenseCard(
@@ -329,6 +331,8 @@ fun ExpenseItem(
         value = value,
         notes = notes,
         isPaid = isPaid,
+        isAdvanced = isAdvanced,
+        advancedLabel = advancedLabel,
         onView = onViewClick
     )
 }

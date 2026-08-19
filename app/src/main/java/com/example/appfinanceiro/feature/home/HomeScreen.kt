@@ -60,6 +60,7 @@ import com.example.appfinanceiro.feature.home.components.ResumoFinanceiroSection
 import com.example.appfinanceiro.feature.home.utils.formatCurrency
 import com.example.appfinanceiro.feature.home.utils.formatExpenseDate
 import com.example.appfinanceiro.feature.home.utils.getCategoryIconAndColor
+import com.example.appfinanceiro.feature.despesas.formatAdvancedDate
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -393,6 +394,8 @@ fun HomeScreen(
                     value = "- ${formatCurrency(expense.amount)}",
                     notes = expense.notes,
                     isPaid = expense.is_paid,
+                    isAdvanced = expense.isAdvanced,
+                    advancedLabel = formatAdvancedDate(expense.advancedAt)?.let { "Adiantada em $it" },
                     onViewClick = { expenseToView = expense }
                 )
             }

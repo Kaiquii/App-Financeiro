@@ -18,6 +18,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
+import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.expenseDetailBlock
 import com.example.appfinanceiro.core.network.Expense
 import com.example.appfinanceiro.core.network.PaymentSplit
@@ -38,7 +40,10 @@ import java.util.Locale
 fun ExpenseDetailsDialog(
     expense: Expense,
     categoryName: String,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onAdvanceClick: (() -> Unit)? = null,
+    onChangeAdvanceDateClick: (() -> Unit)? = null,
+    onRemoveAdvanceClick: (() -> Unit)? = null
 ) {
     val dialogBackgroundColor = MaterialTheme.colorScheme.background
     val dialogTextColor = MaterialTheme.colorScheme.onBackground
@@ -49,6 +54,11 @@ fun ExpenseDetailsDialog(
         expense.paid_at
             ?.takeIf { expense.is_paid }
             ?.let(::formatExpensePaidAt)
+    }
+    val advancedAtLabel = remember(expense.isAdvanced, expense.advancedAt) {
+        expense.advancedAt
+            ?.takeIf { expense.isAdvanced }
+            ?.let(::formatExpenseAdvancedAt)
     }
     val typeLabel = remember(expense.type, expense.current_installment, expense.installments) {
         when {
@@ -99,6 +109,16 @@ fun ExpenseDetailsDialog(
                     textColor = dialogTextColor
                 )
 
+                if (!expense.type.equals("Fixa", ignoreCase = true)) {
+                    AdvanceDetailsBlock(
+                        isAdvanced = expense.isAdvanced,
+                        advancedAtLabel = advancedAtLabel,
+                        onAdvanceClick = onAdvanceClick,
+                        onChangeDateClick = onChangeAdvanceDateClick,
+                        onRemoveClick = onRemoveAdvanceClick
+                    )
+                }
+
                 NotesDetailBox(
                     value = expense.notes?.takeIf { it.isNotBlank() } ?: "Sem observações",
                     textColor = dialogTextColor
@@ -115,6 +135,76 @@ fun ExpenseDetailsDialog(
             }
         }
     )
+}
+
+@Composable
+private fun AdvanceDetailsBlock(
+    isAdvanced: Boolean,
+    advancedAtLabel: String?,
+    onAdvanceClick: (() -> Unit)?,
+    onChangeDateClick: (() -> Unit)?,
+    onRemoveClick: (() -> Unit)?
+) {
+    if (!isAdvanced && onAdvanceClick == null) return
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = PrimaryBlue.copy(alpha = 0.10f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (!isAdvanced) {
+            OutlinedButton(
+                onClick = onAdvanceClick ?: {},
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("Adiantar despesa", color = PrimaryBlue, fontWeight = FontWeight.Bold)
+            }
+            return@Column
+        }
+
+        Text(
+            text = advancedAtLabel?.let { "Adiantada em $it" } ?: "Despesa adiantada",
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "O status Paga é independente deste adiantamento.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp
+        )
+
+        if (onChangeDateClick != null || onRemoveClick != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                onChangeDateClick?.let { onClick ->
+                    OutlinedButton(
+                        onClick = onClick,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text("Alterar data", color = PrimaryBlue, maxLines = 1)
+                    }
+                }
+                onRemoveClick?.let { onClick ->
+                    OutlinedButton(
+                        onClick = onClick,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text("Remover", color = DangerRed, maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -314,4 +404,10 @@ private fun formatExpensePaidAt(dateString: String): String {
 
     val time = Regex("[T ](\\d{2}:\\d{2})").find(dateString)?.groupValues?.get(1)
     return time?.let { "$formattedDate às $it" } ?: formattedDate
+}
+
+private fun formatExpenseAdvancedAt(dateString: String): String {
+    val datePart = dateString.substringBefore('T').substringBefore(' ')
+    val parts = datePart.split('-')
+    return if (parts.size == 3) "${parts[2]}/${parts[1]}/${parts[0]}" else datePart
 }

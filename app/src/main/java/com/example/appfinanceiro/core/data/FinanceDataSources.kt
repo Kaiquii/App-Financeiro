@@ -9,6 +9,7 @@ import com.example.appfinanceiro.core.network.ChartReportResponse
 import com.example.appfinanceiro.core.network.DefaultResponse
 import com.example.appfinanceiro.core.network.ExpensesResponse
 import com.example.appfinanceiro.core.network.ExpensePaymentStatusResponse
+import com.example.appfinanceiro.core.network.AdvanceStatusResponse
 import com.example.appfinanceiro.core.network.IncomesResponse
 import com.example.appfinanceiro.core.network.InstallmentCommitmentsResponse
 import com.example.appfinanceiro.core.network.MonthComparisonResponse
@@ -25,6 +26,13 @@ interface HomeDataSource {
         year: Int,
         paymentStatus: String?
     ): ExpensesResponse
+
+    suspend fun getEffectiveExpenses(
+        token: String,
+        month: Int,
+        year: Int,
+        paymentStatus: String?
+    ): ExpensesResponse = getExpenses(token, month, year, paymentStatus)
 }
 
 interface ExpensesDataSource {
@@ -35,12 +43,24 @@ interface ExpensesDataSource {
         year: Int,
         paymentStatus: String?
     ): ExpensesResponse
+    suspend fun getEffectiveExpenses(
+        token: String,
+        month: Int,
+        year: Int,
+        paymentStatus: String?
+    ): ExpensesResponse = getExpenses(token, month, year, paymentStatus)
     suspend fun deleteExpense(token: String, id: Int, deleteFuture: Boolean? = null): DefaultResponse
     suspend fun updateExpensePaymentStatus(
         token: String,
         id: Int,
         isPaid: Boolean
     ): ExpensePaymentStatusResponse
+    suspend fun updateAdvanceStatus(
+        token: String,
+        id: Int,
+        isAdvanced: Boolean,
+        advancedAt: String?
+    ): AdvanceStatusResponse = error("Atualização de adiantamento não implementada")
 }
 
 interface ReportsDataSource {

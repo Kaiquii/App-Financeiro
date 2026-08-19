@@ -52,7 +52,11 @@ data class Expense(
     val payment_splits: List<PaymentSplit> = emptyList(),
     val notes: String? = null,
     val is_paid: Boolean = false,
-    val paid_at: String? = null
+    val paid_at: String? = null,
+    @SerializedName("is_advanced")
+    val isAdvanced: Boolean = false,
+    @SerializedName("advanced_at")
+    val advancedAt: String? = null
 )
 
 data class PaymentSplit(
@@ -193,6 +197,18 @@ data class ExpensePaymentStatusRequest(
 )
 
 data class ExpensePaymentStatusResponse(
+    val message: String,
+    val expense: Expense
+)
+
+data class UpdateAdvanceStatusRequest(
+    @SerializedName("is_advanced")
+    val isAdvanced: Boolean,
+    @SerializedName("advanced_at")
+    val advancedAt: String? = null
+)
+
+data class AdvanceStatusResponse(
     val message: String,
     val expense: Expense
 )
@@ -428,7 +444,8 @@ interface FinanceApi {
         @Header("Authorization") token: String,
         @Query("month") month: Int,
         @Query("year") year: Int,
-        @Query("payment_status") paymentStatus: String? = null
+        @Query("payment_status") paymentStatus: String? = null,
+        @Query("period_mode") periodMode: String? = null
     ): ExpensesResponse
 
     @GET("api/incomes/")
@@ -457,6 +474,13 @@ interface FinanceApi {
         @retrofit2.http.Path("id") id: Int,
         @retrofit2.http.Body request: ExpensePaymentStatusRequest
     ): ExpensePaymentStatusResponse
+
+    @retrofit2.http.PATCH("api/expenses/{id}/advance-status")
+    suspend fun updateAdvanceStatus(
+        @retrofit2.http.Header("Authorization") token: String,
+        @retrofit2.http.Path("id") id: Int,
+        @retrofit2.http.Body request: UpdateAdvanceStatusRequest
+    ): AdvanceStatusResponse
 
     @retrofit2.http.DELETE("api/expenses/{id}")
     suspend fun deleteExpense(

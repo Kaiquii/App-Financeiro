@@ -83,6 +83,23 @@ class FinanceRepository : HomeDataSource, ExpensesDataSource, ReportsDataSource,
         }
     }
 
+    override suspend fun getEffectiveExpenses(
+        token: String,
+        month: Int,
+        year: Int,
+        paymentStatus: String?
+    ): ExpensesResponse {
+        return authorizedRequest {
+            RetrofitClient.financeApi.getExpenses(
+                token = bearer(token),
+                month = month,
+                year = year,
+                paymentStatus = paymentStatus,
+                periodMode = "effective"
+            )
+        }
+    }
+
     override suspend fun getIncomes(token: String, month: Int?, year: Int?): IncomesResponse {
         return authorizedRequest {
             RetrofitClient.financeApi.getIncomes(
@@ -117,6 +134,24 @@ class FinanceRepository : HomeDataSource, ExpensesDataSource, ReportsDataSource,
                 token = bearer(token),
                 id = id,
                 request = ExpensePaymentStatusRequest(isPaid = isPaid)
+            )
+        }
+    }
+
+    override suspend fun updateAdvanceStatus(
+        token: String,
+        id: Int,
+        isAdvanced: Boolean,
+        advancedAt: String?
+    ): AdvanceStatusResponse {
+        return authorizedRequest {
+            RetrofitClient.financeApi.updateAdvanceStatus(
+                token = bearer(token),
+                id = id,
+                request = UpdateAdvanceStatusRequest(
+                    isAdvanced = isAdvanced,
+                    advancedAt = advancedAt
+                )
             )
         }
     }

@@ -120,7 +120,7 @@ class HomeViewModel(
 
             try {
                 val categories = repository.getCategories(token)
-                val expenses = repository.getExpenses(token, month, year, paymentStatus)
+                val expenses = repository.getEffectiveExpenses(token, month, year, paymentStatus)
 
                 _uiState.update {
                     it.copy(
