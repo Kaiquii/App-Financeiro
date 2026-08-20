@@ -333,6 +333,7 @@ fun ExpenseItem(
         isPaid = isPaid,
         isAdvanced = isAdvanced,
         advancedLabel = advancedLabel,
+        showDate = !isAdvanced,
         onView = onViewClick
     )
 }
