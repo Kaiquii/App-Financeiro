@@ -23,9 +23,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,8 +38,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -473,31 +480,36 @@ fun DespesasScreen(
 
                     if (filteredIncomingAdvanced.isNotEmpty()) {
                         item(key = "incoming_advanced_header") {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    text = "Adiantadas de outros meses",
-                                    color = textColor,
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    text = "Incluídas no total de ${monthName(currentMonthIndex + 1)}",
-                                    color = secondaryTextColor,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                            AdvancedExpensesImpactNotice(
+                                selectedMonth = currentMonthIndex + 1,
+                                selectedYear = currentYear
+                            )
                         }
                         items(
                             items = filteredIncomingAdvanced,
                             key = { expense -> "incoming_${expense.id}" }
                         ) { expense ->
-                            DespesaListItem(
+                            AdvancedExpenseImpactCard(
                                 expense = expense,
                                 categoriesMap = uiState.categoriesMap,
                                 onView = { expenseToView = expense },
-                                onEdit = { onEditClick(expense.id) },
-                                onDelete = { expenseToDelete = expense },
-                                onPaymentStatusClick = { expensePaymentStatusToChange = expense }
+                                onGoToOriginalExpense = {
+                                    val scheduledPeriod = expense.scheduledMonthYear()
+                                    if (scheduledPeriod == null) {
+                                        Toast.makeText(
+                                            context,
+                                            "Não foi possível identificar o mês original desta despesa.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        val (month, year) = scheduledPeriod
+                                        searchQuery = ""
+                                        selectedFilter = "Todas"
+                                        selectedPaymentStatus = null
+                                        currentMonthIndex = month - 1
+                                        currentYear = year
+                                    }
+                                }
                             )
                         }
                     }
@@ -862,3 +874,151 @@ fun DespesaListItem(
         onPaymentStatusClick = onPaymentStatusClick
     )
 }
+
+@Composable
+private fun AdvancedExpensesImpactNotice(
+    selectedMonth: Int,
+    selectedYear: Int
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = PrimaryBlue.copy(alpha = 0.10f)
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(PrimaryBlue.copy(alpha = 0.18f), RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EventAvailable,
+                    contentDescription = null,
+                    tint = PrimaryBlue,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = "Impactam o planejamento deste mês",
+                    color = colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Despesas previstas para outros meses foram incluídas em ${monthName(selectedMonth)} de $selectedYear.",
+                    color = colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdvancedExpenseImpactCard(
+    expense: Expense,
+    categoriesMap: Map<Int, String>,
+    onView: () -> Unit,
+    onGoToOriginalExpense: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val categoryName = categoriesMap[expense.category_id] ?: "Outros"
+    val formattedAmount = remember(expense.amount) {
+        NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(expense.amount)
+    }
+    val scheduledDate = formatAdvancedDate(expense.date) ?: "data não informada"
+    val advancedDate = formatAdvancedDate(expense.advancedAt) ?: "mês selecionado"
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = expense.description,
+                        color = colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = categoryName,
+                        color = colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "- $formattedAmount",
+                    color = colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
+
+            Text(
+                text = "Prevista para $scheduledDate · Considerada em $advancedDate",
+                color = colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onView,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Visibility,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Visualizar", maxLines = 1)
+                }
+                Button(
+                    onClick = onGoToOriginalExpense,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryBlue,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Ir para despesa", maxLines = 1)
+                }
+            }
+        }
+        }
+    }
