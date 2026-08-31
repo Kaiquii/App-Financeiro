@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.date.shiftMonth
 import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.theme.DangerRed
 import com.example.appfinanceiro.core.designsystem.theme.GreenPositive
@@ -1055,12 +1056,6 @@ private fun String.paymentSourceLabel(shortLabel: Boolean): String {
 }
 
 private fun addMonths(month: Int, year: Int, amount: Int): Pair<Int, Int> {
-    val calendar = Calendar.getInstance().apply {
-        set(Calendar.YEAR, year)
-        set(Calendar.MONTH, month - 1)
-        set(Calendar.DAY_OF_MONTH, 1)
-        add(Calendar.MONTH, amount)
-    }
-
-    return Pair(calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR))
+    val target = shiftMonth(month - 1, year, amount)
+    return Pair(target.monthIndex + 1, target.year)
 }

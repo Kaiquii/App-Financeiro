@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.FinanceActionsViewModel
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.date.shiftMonth
 import com.example.appfinanceiro.core.data.userMessageOr
 import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
 import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
@@ -92,6 +93,12 @@ fun ConfiguracoesRendaScreen(
     val calendar = remember { Calendar.getInstance() }
     var selectedMonthIndex by remember { mutableIntStateOf(calendar.get(Calendar.MONTH)) }
     var selectedYear by remember { mutableIntStateOf(calendar.get(Calendar.YEAR)) }
+
+    fun changeMonth(amount: Int) {
+        val target = shiftMonth(selectedMonthIndex, selectedYear, amount)
+        selectedMonthIndex = target.monthIndex
+        selectedYear = target.year
+    }
 
     var incomes by remember { mutableStateOf<List<Income>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -340,22 +347,8 @@ fun ConfiguracoesRendaScreen(
                     MonthSelector(
                         monthIndex = selectedMonthIndex,
                         currentYear = selectedYear,
-                        onPrevClick = {
-                            if (selectedMonthIndex == 0) {
-                                selectedMonthIndex = 11
-                                selectedYear--
-                            } else {
-                                selectedMonthIndex--
-                            }
-                        },
-                        onNextClick = {
-                            if (selectedMonthIndex == 11) {
-                                selectedMonthIndex = 0
-                                selectedYear++
-                            } else {
-                                selectedMonthIndex++
-                            }
-                        }
+                        onPrevClick = { changeMonth(-1) },
+                        onNextClick = { changeMonth(1) }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))

@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.date.shiftMonth
 import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
 import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.components.StandardBottomBar
@@ -95,19 +96,19 @@ fun RelatoriosScreen(
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
 
-    var currentMonthIndex by rememberSaveable {
-        mutableIntStateOf(Calendar.getInstance().get(Calendar.MONTH))
+    val initialDate = remember { Calendar.getInstance() }
+    val initialMonthIndex = initialDate.get(Calendar.MONTH)
+    val initialYear = initialDate.get(Calendar.YEAR)
+    val initialPreviousMonth = remember(initialMonthIndex, initialYear) {
+        shiftMonth(initialMonthIndex, initialYear, -1)
     }
-    var currentYear by rememberSaveable {
-        mutableIntStateOf(Calendar.getInstance().get(Calendar.YEAR))
-    }
+    var currentMonthIndex by rememberSaveable { mutableIntStateOf(initialMonthIndex) }
+    var currentYear by rememberSaveable { mutableIntStateOf(initialYear) }
     var compareMonthIndex by rememberSaveable {
-        val previousMonth = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }
-        mutableIntStateOf(previousMonth.get(Calendar.MONTH))
+        mutableIntStateOf(initialPreviousMonth.monthIndex)
     }
     var compareYear by rememberSaveable {
-        val previousMonth = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }
-        mutableIntStateOf(previousMonth.get(Calendar.YEAR))
+        mutableIntStateOf(initialPreviousMonth.year)
     }
     var selectedRange by rememberSaveable { mutableStateOf(ReportRange.ONE_MONTH) }
     var showExportSheet by rememberSaveable { mutableStateOf(false) }
@@ -139,35 +140,25 @@ fun RelatoriosScreen(
     }
 
     fun changeMonth(amount: Int) {
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.YEAR, currentYear)
-            set(Calendar.MONTH, currentMonthIndex)
-            add(Calendar.MONTH, amount)
-        }
+        val target = shiftMonth(currentMonthIndex, currentYear, amount)
+        val previousMonth = shiftMonth(target.monthIndex, target.year, -1)
 
-        val previousMonth = cal.clone() as Calendar
-        previousMonth.add(Calendar.MONTH, -1)
-
-        currentMonthIndex = cal.get(Calendar.MONTH)
-        currentYear = cal.get(Calendar.YEAR)
-        compareMonthIndex = previousMonth.get(Calendar.MONTH)
-        compareYear = previousMonth.get(Calendar.YEAR)
+        currentMonthIndex = target.monthIndex
+        currentYear = target.year
+        compareMonthIndex = previousMonth.monthIndex
+        compareYear = previousMonth.year
     }
 
     fun changeCompareMonth(amount: Int) {
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.YEAR, compareYear)
-            set(Calendar.MONTH, compareMonthIndex)
-            add(Calendar.MONTH, amount)
-            if (
-                get(Calendar.MONTH) == currentMonthIndex &&
-                get(Calendar.YEAR) == currentYear
-            ) {
-                add(Calendar.MONTH, amount)
-            }
+        var target = shiftMonth(compareMonthIndex, compareYear, amount)
+        if (
+            target.monthIndex == currentMonthIndex &&
+            target.year == currentYear
+        ) {
+            target = shiftMonth(target.monthIndex, target.year, amount)
         }
-        compareMonthIndex = cal.get(Calendar.MONTH)
-        compareYear = cal.get(Calendar.YEAR)
+        compareMonthIndex = target.monthIndex
+        compareYear = target.year
     }
 
     LaunchedEffect(currentMonthIndex, currentYear, userToken) {
@@ -182,13 +173,9 @@ fun RelatoriosScreen(
 
     LaunchedEffect(currentMonthIndex, currentYear, compareMonthIndex, compareYear, userToken) {
         if (compareMonthIndex == currentMonthIndex && compareYear == currentYear) {
-            val previousMonth = Calendar.getInstance().apply {
-                set(Calendar.YEAR, currentYear)
-                set(Calendar.MONTH, currentMonthIndex)
-                add(Calendar.MONTH, -1)
-            }
-            compareMonthIndex = previousMonth.get(Calendar.MONTH)
-            compareYear = previousMonth.get(Calendar.YEAR)
+            val previousMonth = shiftMonth(currentMonthIndex, currentYear, -1)
+            compareMonthIndex = previousMonth.monthIndex
+            compareYear = previousMonth.year
             return@LaunchedEffect
         }
 

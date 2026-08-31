@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.date.shiftMonth
 import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
 import com.example.appfinanceiro.core.designsystem.components.dataRequestErrorMessage
@@ -197,14 +198,9 @@ fun HomeScreen(
     } else null
 
     fun changeMonth(amount: Int) {
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.YEAR, currentYear)
-            set(Calendar.MONTH, currentMonthIndex)
-            add(Calendar.MONTH, amount)
-        }
-
-        currentMonthIndex = cal.get(Calendar.MONTH)
-        currentYear = cal.get(Calendar.YEAR)
+        val target = shiftMonth(currentMonthIndex, currentYear, amount)
+        currentMonthIndex = target.monthIndex
+        currentYear = target.year
     }
 
     LaunchedEffect(currentMonthIndex, currentYear, userToken, refreshIncomeActions) {

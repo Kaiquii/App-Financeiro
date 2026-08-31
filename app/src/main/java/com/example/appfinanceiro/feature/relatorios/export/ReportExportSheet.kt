@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.appfinanceiro.core.designsystem.theme.PrimaryBlue
+import com.example.appfinanceiro.core.date.shiftMonth
 import java.text.DateFormatSymbols
 import java.util.Calendar
 import java.util.Locale
@@ -328,12 +329,8 @@ private fun PeriodPicker(
 }
 
 private fun changeMonth(month: Int, year: Int, amount: Int): Pair<Int, Int> {
-    val calendar = Calendar.getInstance().apply {
-        set(Calendar.YEAR, year)
-        set(Calendar.MONTH, month - 1)
-        add(Calendar.MONTH, amount)
-    }
-    return (calendar.get(Calendar.MONTH) + 1) to calendar.get(Calendar.YEAR)
+    val target = shiftMonth(month - 1, year, amount)
+    return (target.monthIndex + 1) to target.year
 }
 
 private fun monthName(month: Int): String {

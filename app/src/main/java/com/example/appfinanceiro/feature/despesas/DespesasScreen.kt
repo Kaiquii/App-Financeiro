@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appfinanceiro.core.data.SessionManager
+import com.example.appfinanceiro.core.date.shiftMonth
 import com.example.appfinanceiro.core.designsystem.components.AppDataErrorBanner
 import com.example.appfinanceiro.core.designsystem.components.AppLoadingIndicator
 import com.example.appfinanceiro.core.designsystem.components.ExpenseDetailsDialog
@@ -124,6 +125,12 @@ fun DespesasScreen(
     }
     var currentYear by rememberSaveable {
         mutableIntStateOf(calendar.get(Calendar.YEAR))
+    }
+
+    fun changeMonth(amount: Int) {
+        val target = shiftMonth(currentMonthIndex, currentYear, amount)
+        currentMonthIndex = target.monthIndex
+        currentYear = target.year
     }
 
     var expenseToDelete by remember { mutableStateOf<Expense?>(null) }
@@ -362,22 +369,8 @@ fun DespesasScreen(
             MonthSelector(
                 monthIndex = currentMonthIndex,
                 currentYear = currentYear,
-                onPrevClick = {
-                    if (currentMonthIndex == 0) {
-                        currentMonthIndex = 11
-                        currentYear--
-                    } else {
-                        currentMonthIndex--
-                    }
-                },
-                onNextClick = {
-                    if (currentMonthIndex == 11) {
-                        currentMonthIndex = 0
-                        currentYear++
-                    } else {
-                        currentMonthIndex++
-                    }
-                },
+                onPrevClick = { changeMonth(-1) },
+                onNextClick = { changeMonth(1) },
                 centerSuffix = when {
                     uiState.errorMessage != null && uiState.expensesData.isEmpty() -> null
                     selectedFilterCount == 1 -> "1 despesa"
