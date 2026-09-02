@@ -399,7 +399,7 @@ fun PerfilScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
@@ -466,7 +466,11 @@ fun PerfilScreen(
                 onClick = onHelpClick
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(
+                modifier = Modifier.height(
+                    paddingValues.calculateBottomPadding() + 12.dp
+                )
+            )
         }
     }
 }

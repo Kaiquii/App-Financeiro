@@ -276,7 +276,7 @@ fun DespesasScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
             OutlinedTextField(
                 value = searchQuery,
@@ -444,7 +444,12 @@ fun DespesasScreen(
             } else {
                 LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        top = 8.dp,
+                        end = 16.dp,
+                        bottom = paddingValues.calculateBottomPadding() + 16.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     if (filteredExpenses.isNotEmpty()) {
