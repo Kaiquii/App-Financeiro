@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -225,7 +225,9 @@ private fun RowScope.BottomBarItem(
     ) {
         Box(
             modifier = Modifier
-                .width(52.dp)
+                .padding(horizontal = 6.dp)
+                .widthIn(max = 52.dp)
+                .fillMaxWidth()
                 .height(32.dp)
                 .background(
                     color = if (isSelected) selectedIndicatorColor else Color.Transparent,

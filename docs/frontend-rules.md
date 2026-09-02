@@ -4,6 +4,9 @@ Estas regras devem ser consideradas em toda mudança visual do aplicativo.
 
 ## Responsividade e acessibilidade
 
+- Toda implementação visual deve considerar celulares com diferentes tamanhos, proporções e densidades de tela. O layout precisa se adaptar corretamente a telas compactas, convencionais e grandes, incluindo aparelhos dobráveis e uso em modo de tela dividida.
+- Não assumir uma largura fixa disponível. Componentes, indicadores, diálogos, cards e áreas de navegação devem respeitar os limites do contêiner, manter margens mínimas e encolher, reorganizar ou permitir rolagem quando o espaço for reduzido.
+- Antes de concluir uma mudança visual, conferir o comportamento em diferentes larguras de viewport e com os ajustes de tamanho da interface e da fonte aumentados. Nenhum elemento pode encostar indevidamente nas bordas, sobrepor outro conteúdo, ficar cortado ou perder sua área mínima de toque.
 - Sempre considerar celulares com telas pequenas e estreitas, além de fontes maiores e teclado aberto.
 - Em telas com conteúdo extenso, usar rolagem vertical e `imePadding()` para que os campos e botões não fiquem inacessíveis pelo teclado.
 - Respeitar áreas seguras do sistema. Ações no topo, como voltar, devem usar `statusBarsPadding()`; ações no rodapé devem respeitar a barra de navegação.
